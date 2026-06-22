@@ -96,22 +96,95 @@ const p=pt.portfolio,sig=pt.signal,ot=pt.openTrade,isL=sig.direction==='LONG',is
 cC=dash?.candles||[];cS=sig;cO=ot;
 let h='';
 h+=`<div class="header"><div class="logo"><div class="logo-icon">⚡</div><div><div class="logo-text">TITAN<span>-AI</span></div><div style="font-size:9px;color:#666">Paper Trading · $100</div></div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">${pt.iaActive?'<div class="ia-badge">IA v4 ACTIVA</div>':'<div class="ia-badge" style="background:rgba(234,179,8,.1);color:#eab308;border-color:rgba(234,179,8,.3)">Fallback</div>'}<div class="update-info">Actualizado: ${ts.updated?new Date(ts.updated).toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit',second:'2-digit'}):'—'}</div></div></div>`;
-if(t){const iu=t.changePct24h>=0;h+=`<div class="price-bar"><div class="price-main"><span style="color:#eab308">₿</span><span class="price-value">${usd(t.price,0)}</span><span class="price-change" style="color:${iu?'#22c55e':'#ef4444'}">${iu?'▲':'▼'} ${t.changePct24h.toFixed(2)}%</span></div><div class="price-stats">24h H: ${usd(t.high24h,0)} | L: ${usd(t.low24h,0)} | Vol: $${(t.quoteVolume24h/1e9).toFixed(2)}B</div></div>`}
+if(t){const iu=t.changePct24h>=0;h+=`<div class="price-bar"><div class="price-main"><span style="color:#eab308">₿</span><span class="price-value" id="livePrice">${usd(t.price,0)}</span><span class="price-change" id="liveChange" style="color:${iu?'#22c55e':'#ef4444'}">${iu?'▲':'▼'} ${t.changePct24h.toFixed(2)}%</span></div><div class="price-stats" id="liveStats">24h H: ${usd(t.high24h,0)} | L: ${usd(t.low24h,0)} | Vol: $${(t.quoteVolume24h/1e9).toFixed(2)}B</div></div>`}
 h+=`<div class="chart-container"><div class="chart-info"><span>BTC/USDT · 4H</span><span class="ema30">EMA30 ${usd(sig.ema30,0)}</span><span class="ema100">EMA100 ${usd(sig.ema100,0)}</span><span class="rsi">RSI ${sig.rsi.toFixed(1)}</span></div><canvas id="chart" style="height:380px"></canvas></div>`;
 h+=`<div class="rsi-container"><div class="rsi-label">RSI (14) — Overbought: 70 · Oversold: 30</div><canvas id="rsiChart" style="height:100px"></canvas></div>`;
 h+=`<div class="section"><div class="section-title">💰 Portfolio</div><div class="stat-grid"><div class="stat"><div class="stat-label">Equity</div><div class="stat-value" style="color:${ip?'#22c55e':'#ef4444'}">${usd(p.equity,2)}</div></div><div class="stat"><div class="stat-label">P&L</div><div class="stat-value" style="color:${ip?'#22c55e':'#ef4444'}">${ip?'+':''}${fmt(p.totalPnl,2)}</div></div><div class="stat"><div class="stat-label">Return</div><div class="stat-value" style="color:${ip?'#22c55e':'#ef4444'}">${tr>=0?'+':''}${tr.toFixed(2)}%</div></div><div class="stat"><div class="stat-label">Win Rate</div><div class="stat-value">${wr.toFixed(0)}%</div></div><div class="stat"><div class="stat-label">Trades</div><div class="stat-value">${p.totalTrades}</div></div><div class="stat"><div class="stat-label">Max DD</div><div class="stat-value" style="color:#ef4444">${p.maxDrawdown.toFixed(1)}%</div></div></div></div>`;
-if(ot){const ol=ot.direction==='LONG',pnl=pt.unrealizedPnl||0,pp=ot.sizeUsd>0?(pnl/ot.sizeUsd)*100:0;h+=`<div class="trade-card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div style="display:flex;align-items:center;gap:8px"><div style="width:8px;height:8px;border-radius:50%;background:${ol?'#22c55e':'#ef4444'};animation:p 2s infinite"></div><span style="font-size:11px;font-weight:bold;color:#ccc;text-transform:uppercase">Posición Abierta</span><span class="dir-badge ${ol?'dir-long':'dir-short'}">${ol?'▲ LONG':'▼ SHORT'}</span>${ot.trailingActive?'<span style="font-size:9px;padding:2px 6px;border-radius:3px;background:rgba(234,179,8,.15);color:#eab308">⚡ TRAILING</span>':''}</div></div><div class="price-row"><span>Entry</span><span style="color:#fff">${usd(ot.entryPrice,0)}</span></div><div class="price-row"><span>Current</span><span style="color:#eab308">${usd(pt.currentPrice,0)}</span></div><div class="price-row"><span>Stop Loss</span><span style="color:#ef4444">${usd(ot.stopLoss,0)}</span></div><div class="price-row"><span>Take Profit</span><span style="color:#22c55e">${usd(ot.takeProfit1,0)}</span></div><div class="price-row"><span>Size</span><span style="color:#3b82f6">${usd(ot.sizeUsd,2)} (${(ot.sizeBtc||0).toFixed(5)} BTC)</span></div><div class="price-row"><span>PnL</span><span style="color:${pnl>=0?'#22c55e':'#ef4444'};font-weight:bold">${pnl>=0?'+':''}${fmt(pnl,2)} (${pp.toFixed(1)}%)</span></div></div>`}
+if(ot){const ol=ot.direction==='LONG',pnl=pt.unrealizedPnl||0,pp=ot.sizeUsd>0?(pnl/ot.sizeUsd)*100:0;h+=`<div class="trade-card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div style="display:flex;align-items:center;gap:8px"><div style="width:8px;height:8px;border-radius:50%;background:${ol?'#22c55e':'#ef4444'};animation:p 2s infinite"></div><span style="font-size:11px;font-weight:bold;color:#ccc;text-transform:uppercase">Posición Abierta</span><span class="dir-badge ${ol?'dir-long':'dir-short'}">${ol?'▲ LONG':'▼ SHORT'}</span>${ot.trailingActive?'<span style="font-size:9px;padding:2px 6px;border-radius:3px;background:rgba(234,179,8,.15);color:#eab308">⚡ TRAILING</span>':''}</div></div><div class="price-row"><span>Entry</span><span style="color:#fff">${usd(ot.entryPrice,0)}</span></div><div class="price-row"><span>Current</span><span style="color:#eab308" id="currentPriceDisplay">${usd(pt.currentPrice,0)}</span></div><div class="price-row"><span>Stop Loss</span><span style="color:#ef4444">${usd(ot.stopLoss,0)}</span></div><div class="price-row"><span>Take Profit</span><span style="color:#22c55e">${usd(ot.takeProfit1,0)}</span></div><div class="price-row"><span>Size</span><span style="color:#3b82f6">${usd(ot.sizeUsd,2)} (${(ot.sizeBtc||0).toFixed(5)} BTC)</span></div><div class="price-row"><span>PnL</span><span style="color:${pnl>=0?'#22c55e':'#ef4444'};font-weight:bold">${pnl>=0?'+':''}${fmt(pnl,2)} (${pp.toFixed(1)}%)</span></div></div>`}
 else{h+=`<div class="trade-card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span style="font-size:11px;font-weight:bold;color:#ccc;text-transform:uppercase">Señal Actual</span><span class="dir-badge ${isL?'dir-long':isS?'dir-short':'dir-neutral'}">${isL?'▲':isS?'▼':'■'} ${sig.direction}</span></div><p style="font-size:10px;color:#888">${sig.reason}</p></div>`}
 h+=`<div class="section"><div class="section-title">📊 Indicadores</div><div class="stat-grid"><div class="stat"><div class="stat-label">Vol IA</div><div class="stat-value" style="color:#a855f7">${pct(ind.volIa,4)}</div></div><div class="stat"><div class="stat-label">σ</div><div class="stat-value" style="color:${ind.volStd>0.001?'#ef4444':'#22c55e'}">${pct(ind.volStd,5)}</div></div><div class="stat"><div class="stat-label">Spread 24h</div><div class="stat-value">${ind.spreadPct?.toFixed(2)||'—'}%</div></div><div class="stat"><div class="stat-label">Régimen</div><div class="stat-value" style="color:#60a5fa">${sig.regime.replace('TREND_','').replace('_',' ')}</div></div></div></div>`;
 if(a){const rc=a.recommendationType==='alcista'?'#22c55e':a.recommendationType==='bajista'?'#ef4444':'#6b7280';h+=`<div class="section analyst"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><span style="font-size:11px;font-weight:bold;color:#a5b4fc;text-transform:uppercase">🌐 Analista IA</span><span style="font-size:9px;padding:3px 8px;border-radius:3px;background:rgba(99,102,241,.15);color:${rc};font-weight:bold">${a.recommendationType.toUpperCase()}</span></div><div style="display:flex;justify-content:space-between;margin-bottom:8px"><div><div style="font-size:9px;color:#666;text-transform:uppercase">Sentimiento</div><div style="font-size:22px;font-weight:bold;color:${sc}">${a.sentimentGlobal}<span style="font-size:11px;color:#666">/100</span></div><div style="font-size:10px;color:#888;font-style:italic">${a.sentimentLabel}</div></div>${a.fearGreed?`<div style="text-align:right"><div style="font-size:9px;color:#666;text-transform:uppercase">Fear & Greed</div><div style="font-size:22px;font-weight:bold;color:${a.fearGreed.value>60?'#22c55e':a.fearGreed.value<40?'#ef4444':'#a1a1aa'}">${a.fearGreed.value}</div><div style="font-size:9px;color:#888;font-style:italic">${a.fearGreed.classification}</div></div>`:''}</div><div class="sent-bar"><div class="sent-fill" style="width:${a.sentimentGlobal}%;background:${a.sentimentGlobal>60?'linear-gradient(90deg,#16a34a,#22c55e)':a.sentimentGlobal<40?'linear-gradient(90deg,#dc2626,#ef4444)':'linear-gradient(90deg,#ca8a04,#eab308)'}"></div></div>`;if(a.news&&a.news.length>0){h+=`<div style="margin-top:12px"><div style="font-size:9px;color:#666;text-transform:uppercase;margin-bottom:4px">📰 Noticias</div>`;a.news.slice(0,3).forEach(n=>{const se=n.sentiment==='alcista'?'🟢':n.sentiment==='bajista'?'🔴':'⚪';const ic=n.impact==='alta'?'#ef4444':n.impact==='media'?'#eab308':'#666';h+=`<div class="news-item"><span style="color:${ic}">[${n.impact.toUpperCase()}]</span> ${se} ${n.title.slice(0,65)}${n.title.length>65?'…':''}</div>`});h+=`</div>`}const he=(a.events||[]).filter(e=>e.priority==='alta');if(he.length>0)h+=`<div style="margin-top:8px;font-size:10px;color:#888">⚠️ <b>Eventos:</b> ${he.map(e=>e.type).join(', ')}</div>`;if(a.signal&&a.signalEval){const ev=a.signalEval,ve=ev.veredicto==='OPERABLE'?'🟢':ev.veredicto==='CONDICIONAL'?'🟡':'🔴';h+=`<div style="margin-top:12px;padding-top:12px;border-top:1px solid #1a1a1a"><div style="font-size:11px;font-weight:bold;color:#ccc;text-transform:uppercase;margin-bottom:8px">🎯 Evaluación Señal IA</div><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:10px;color:#888">Señal: <b style="color:${dc}">${a.signal.direction}</b> ${a.signal.shouldTrade?'(activa)':''}</span><span style="font-size:10px;color:#888">Confianza: ${(a.signal.confidence*100).toFixed(0)}%</span></div><div style="font-size:12px;font-weight:bold;margin:8px 0">${ve} ${ev.veredicto} · Score ${ev.scoreOperable}/100</div><div style="font-size:9px;color:#666;font-style:italic;margin-bottom:8px">${ev.justificacion}</div><div style="display:flex;gap:12px;font-size:9px;color:#888"><span>Téc: <b>${ev.riesgoTecnico}</b></span><span>Vol: <b>${ev.riesgoVolatilidad}</b></span><span>Sent: <b>${ev.riesgoSentimiento}</b></span></div><div style="font-size:10px;color:#3b82f6;margin-top:8px">Size: ${ev.sizeSugerido}x · ${ev.sizeRazon}</div></div>`}h+=`</div>`}
 h+=`<div class="footer">TITAN-AI v9-TS · LSTM v4 (258K params)<br>Datos embebidos actualizados cada 2 min · Bot: @yendriel_bot</div>`;
 app.innerHTML=h;
 setTimeout(()=>{const cc=document.getElementById('chart'),rc=document.getElementById('rsiChart');if(cc&&cC.length>0&&cS){drawChart(cc,cC,cS.ema30,cS.ema100,cO?.entryPrice||null,cO?.stopLoss||null,cO?.takeProfit1||null,cO?.direction||cS.direction)}if(rc&&cC.length>0)drawRSI(rc,cC)},50);
-setTimeout(loadData,30000);
+setTimeout(loadData,120000);
 }catch(e){app.innerHTML=`<div style="text-align:center;padding:40px;color:#666"><p style="font-size:14px;color:#ef4444">⚠️ ${e.message}</p><p style="font-size:10px;color:#555;margin-top:8px">Reintentando en 10s…</p></div>`;setTimeout(loadData,10000)}
 }
 window.addEventListener('resize',()=>{setTimeout(()=>{const cc=document.getElementById('chart'),rc=document.getElementById('rsiChart');if(cc&&cC.length>0&&cS){drawChart(cc,cC,cS.ema30,cS.ema100,cO?.entryPrice||null,cO?.stopLoss||null,cO?.takeProfit1||null,cO?.direction||cS.direction)}if(rc&&cC.length>0)drawRSI(rc,cC)},100)});
 loadData();
+
+// === PRECIO EN VIVO DESDE BINANCE (cada 5s) ===
+let livePrice = null;
+let live24h = null;
+let priceInterval = null;
+
+async function fetchLivePrice() {
+  try {
+    const [pr, t24] = await Promise.all([
+      fetch('https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT', {cache:'no-store'}),
+      fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT', {cache:'no-store'}),
+    ]);
+    const pd = await pr.json();
+    const td = await t24.json();
+    livePrice = parseFloat(pd.price);
+    live24h = {
+      price: livePrice,
+      change24h: parseFloat(td.priceChange),
+      changePct24h: parseFloat(td.priceChangePercent),
+      high24h: parseFloat(td.highPrice),
+      low24h: parseFloat(td.lowPrice),
+      volume24h: parseFloat(td.volume),
+      quoteVolume24h: parseFloat(td.quoteVolume),
+    };
+    // Actualizar UI si hay elementos
+    const pv = document.getElementById('livePrice');
+    const pc = document.getElementById('liveChange');
+    const ps = document.getElementById('liveStats');
+    if (pv) {
+      pv.textContent = '$' + livePrice.toLocaleString('en-US', {maximumFractionDigits: 0});
+      pv.style.animation = 'none';
+      pv.offsetHeight; // trigger reflow
+      pv.style.animation = 'flash 0.5s';
+    }
+    if (pc) {
+      const isUp = live24h.changePct24h >= 0;
+      pc.textContent = (isUp ? '▲' : '▼') + ' ' + live24h.changePct24h.toFixed(2) + '%';
+      pc.style.color = isUp ? '#22c55e' : '#ef4444';
+    }
+    if (ps) {
+      ps.textContent = '24h H: $' + live24h.high24h.toLocaleString('en-US',{maximumFractionDigits:0}) +
+        ' | L: $' + live24h.low24h.toLocaleString('en-US',{maximumFractionDigits:0}) +
+        ' | Vol: $' + (live24h.quoteVolume24h/1e9).toFixed(2) + 'B';
+    }
+    // Actualizar último candle del gráfico
+    if (cC.length > 0) {
+      const last = cC[cC.length - 1];
+      last.close = livePrice;
+      last.high = Math.max(last.high, livePrice);
+      last.low = Math.min(last.low, livePrice);
+      const cc = document.getElementById('chart');
+      if (cc && cS) {
+        drawChart(cc, cC, cS.ema30, cS.ema100, cO?.entryPrice||null, cO?.stopLoss||null, cO?.takeProfit1||null, cO?.direction||cS.direction);
+      }
+      const rc = document.getElementById('rsiChart');
+      if (rc) drawRSI(rc, cC);
+    }
+    // Actualizar precio en posición abierta
+    const cp = document.getElementById('currentPriceDisplay');
+    if (cp) cp.textContent = '$' + livePrice.toLocaleString('en-US', {maximumFractionDigits: 0});
+  } catch(e) {
+    console.warn('Live price fetch failed:', e.message);
+  }
+}
+
+// Iniciar polling de precio en vivo
+function startLivePrice() {
+  fetchLivePrice();
+  if (priceInterval) clearInterval(priceInterval);
+  priceInterval = setInterval(fetchLivePrice, 5000); // cada 5 segundos
+}
+
+startLivePrice();
 </script>
 </body>
 </html>
