@@ -66,13 +66,33 @@ canvas{display:block;width:100%}
 <div id="app"><div class="loading"><div class="spinner"></div><p>Cargando TITAN-AI…</p></div></div>
 <button class="btn-refresh" onclick="loadData()">↻</button>
 <script>
-const API='https://yendriel.onrender.com';
+const API='https://yendriel-proxy.super-pencil.workers.dev';
 let currentInterval='4h';
 let cachedCandles=[];
 let cachedSignal=null;
 let cachedOpenTrade=null;
 
-async function f(p){const r=await fetch(API+p,{cache:'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);return r.json()}
+async function f(p){
+  // Intentar proxy de Cloudflare primero (tiene CORS), fallback a Render directo
+  const urls=[
+    'https://yendriel-proxy.super-pencil.workers.dev'+p,
+    'https://yendriel.onrender.com'+p
+  ];
+  for(const url of urls){
+    try{
+      const controller=new AbortController();
+      const timeout=setTimeout(()=>controller.abort(),15000);
+      const r=await fetch(url,{cache:'no-store',signal:controller.signal,mode:'cors'});
+      clearTimeout(timeout);
+      if(!r.ok)throw new Error('HTTP '+r.status);
+      return await r.json();
+    }catch(e){
+      console.warn('Fetch falló:',url,e.message);
+      // Probar siguiente URL
+    }
+  }
+  throw new Error('No data - todos los endpoints fallaron');
+}
 function fmt(n,d=2){return n==null?'—':n.toLocaleString('en-US',{maximumFractionDigits:d,minimumFractionDigits:d})}
 function usd(n,d=0){return n==null?'—':'$'+n.toLocaleString('en-US',{maximumFractionDigits:d,minimumFractionDigits:d})}
 function pct(n,d=2){return n==null?'—':(n*100).toFixed(d)+'%'}
@@ -297,7 +317,7 @@ async function loadData(){
       }
     },50);
     setTimeout(loadData,60000);
-  }catch(e){app.innerHTML=`<div class="error"><p style="font-size:14px;margin-bottom:8px">⚠️ ${e.message}</p><p style="font-size:10px;color:#666">Reintentando en 10s…</p></div>`;setTimeout(loadData,10000)}
+  }catch(e){app.innerHTML=`<div class="error"><p style="font-size:14px;margin-bottom:8px">⚠️ ${e.message}</p><p style="font-size:10px;color:#666;margin-bottom:12px">Reintentando en 5s…</p><p style="font-size:9px;color:#444">Si el error persiste, el servidor puede estar reiniciando.</p><p style="font-size:9px;color:#444;margin-top:8px">Usa el bot de Telegram mientras tanto:<br><b>@yendriel_bot</b> → /status /paper /analisis</p></div>`;setTimeout(loadData,5000)}
 }
 
 function changeInterval(tf){
