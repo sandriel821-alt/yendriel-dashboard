@@ -255,10 +255,10 @@ setTimeout(rotateIALog,5000);setTimeout(loadData,120000);
 }catch(e){app.innerHTML='<div style="text-align:center;padding:60px;color:var(--text-secondary)"><p style="font-size:14px;color:var(--accent-red)">⚠️ '+e.message+'</p><p style="font-size:10px;margin-top:8px">Reintentando en 10s…</p></div>';setTimeout(loadData,10000)}
 }
 window.addEventListener('resize',()=>{setTimeout(()=>{const cc=document.getElementById('chart'),rc=document.getElementById('rsiChart');if(cc&&cC.length>0&&cS)drawChart(cc,cC,cS.ema30,cS.ema100,cO?.entryPrice||null,cO?.stopLoss||null,cO?.takeProfit1||null,cO?.direction||cS.direction);if(rc&&cC.length>0)drawRSI(rc,cC)},100)});
+
+function rotateIALog(){var l=document.getElementById('iaLog');if(!l)return;var m=['● IA monitoreando mercado... ● WebSocket conectado ● Esperando señal EMA 30/100','● LSTM v4 procesando velas 5m... ● 3 folds activos ● Scaler normalizando input','● Cubo multitemporal 24x4x5 construido ● Contexto diario calculado ● Listo para predecir','● Feedback loop: evaluando predicciones pasadas ● Pesos adaptativos: activos ● Ensemble: operacional','● Binance API: conectada ● Neon DB: conectada ● Telegram: webhook activo ● 24/7 operacional'];l.textContent=m[Math.floor(Date.now()/5000)%m.length];setTimeout(rotateIALog,5000)}
+
 loadData();
 </script>
 </body>
 </html>
-
-<script>function rotateIALog(){var l=document.getElementById('iaLog');if(!l)return;var m=['● IA monitoreando mercado... ● WebSocket conectado ● Esperando señal EMA 30/100','● LSTM v4 procesando velas 5m... ● 3 folds activos ● Scaler normalizando input','● Cubo multitemporal 24x4x5 construido ● Contexto diario calculado ● Listo para predecir','● Feedback loop: evaluando predicciones pasadas ● Pesos adaptativos: activos ● Ensemble: operacional','● Binance API: conectada ● Neon DB: conectada ● Telegram: webhook activo ● 24/7 operacional'];l.textContent=m[Math.floor(Date.now()/5000)%m.length];setTimeout(rotateIALog,5000)}
-</script>
