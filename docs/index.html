@@ -31,7 +31,8 @@ body{background:linear-gradient(145deg,#0a0e17 0%,#111827 100%);color:var(--text
 @media(min-width:1024px){.grid-main{grid-template-columns:1fr 380px}}
 .grid-bottom{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:12px}
 @media(min-width:768px){.grid-bottom{grid-template-columns:repeat(4,1fr)}}
-.card{background:var(--bg-secondary);border:1px solid var(--border);border-radius:12px;padding:16px;position:relative;overflow:hidden}
+.card{background:linear-gradient(180deg,var(--bg-secondary) 0%,rgba(26,35,50,.6) 100%);border:1px solid var(--border);border-radius:12px;padding:16px;position:relative;overflow:hidden;transition:border-color .2s}
+.card:hover{border-color:rgba(0,212,170,.3)}
 .card-title{font-size:10px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px}
 .signal-card{background:var(--bg-secondary);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px}
 .signal-status{display:flex;align-items:center;gap:10px;margin-bottom:12px}
@@ -237,6 +238,32 @@ if(ev){const vCls=ev.veredicto==='APROBAR'?'buy':ev.veredicto==='OPERAR_50'?'wai
 if(a.news&&a.news.length>0){h+='<div class="card" style="margin-bottom:12px"><div class="card-title">📰 Noticias (actualizadas cada 4H)</div>';a.news.slice(0,5).forEach(n=>{const se=n.sentiment==='alcista'?'🟢':n.sentiment==='bajista'?'🔴':'⚪';const ic=n.impact==='alta'?'var(--accent-red)':n.impact==='media'?'var(--accent-gold)':'var(--text-secondary)';h+='<div style="font-size:10px;padding:5px 0;border-bottom:1px solid rgba(42,58,92,.3)"><span style="color:'+ic+';font-weight:700">['+n.impact.toUpperCase()+']</span> '+se+' '+n.title.slice(0,60)+(n.title.length>60?'…':'')+'</div>'});h+='</div>'}}
 h+='</div></div>';
 h+='<div class="grid-bottom"><div class="metric-card"><div class="metric-label">Equity</div><div class="metric-value '+(ip?'green':'red')+'">'+usd(p.equity,2)+'</div><div class="metric-sub">'+(tr>=0?'+':'')+tr.toFixed(2)+'%</div></div><div class="metric-card"><div class="metric-label">Win Rate</div><div class="metric-value">'+wr.toFixed(0)+'%</div><div class="metric-sub">'+p.wins+'W / '+p.losses+'L</div></div><div class="metric-card"><div class="metric-label">Trades</div><div class="metric-value">'+p.totalTrades+'</div><div class="metric-sub">Abiertos: '+(ot?1:0)+'</div></div><div class="metric-card"><div class="metric-label">Max DD</div><div class="metric-value red">'+p.maxDrawdown.toFixed(1)+'%</div><div class="metric-sub">Peak: '+usd(p.peakEquity,2)+'</div></div></div>';
+
+// === PANEL INSTITUCIONAL ===
+if(pt.institutional){
+  const inst=pt.institutional.data;
+  const sig=pt.institutional.signal;
+  const biasCls=sig.bias==='bullish'?'green':sig.bias==='bearish'?'red':'gray';
+  const biasEmoji=sig.bias==='bullish'?'🟢':sig.bias==='bearish'?'🔴':'⚪';
+  const fundEmoji=inst.fundingRate>0.0003?'🔴':inst.fundingRate<-0.0002?'🟢':'⚪';
+  const oiEmoji=inst.openInterestChange24h>5?'📈':inst.openInterestChange24h<-5?'📉':'➡️';
+  const cvdEmoji=inst.cvd.trend==='bullish'?'🟢':inst.cvd.trend==='bearish'?'🔴':'⚪';
+  const divMark=inst.cvd.divergence?' ⚠️':'';
+  h+='<div class="card" style="margin-bottom:12px;border-color:rgba(168,85,247,.3);background:linear-gradient(135deg,var(--bg-secondary) 0%,rgba(168,85,247,.05) 100%)"><div class="card-title">🏛️ Datos Institucionales '+biasEmoji+'</div>';
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:11px">';
+  h+='<div style="padding:6px 0;border-bottom:1px solid rgba(42,58,92,.3)"><span style="color:var(--text-secondary)">'+fundEmoji+' Funding</span><div style="font-weight:600;margin-top:2px">'+(inst.fundingRate*100).toFixed(4)+'% · '+inst.fundingRateAnnual.toFixed(1)+'% anual</div></div>';
+  h+='<div style="padding:6px 0;border-bottom:1px solid rgba(42,58,92,.3)"><span style="color:var(--text-secondary)">'+oiEmoji+' Open Interest</span><div style="font-weight:600;margin-top:2px">$'+(inst.openInterest/1e9).toFixed(2)+'B ('+(inst.openInterestChange24h>=0?'+':'')+inst.openInterestChange24h.toFixed(1)+'%)</div></div>';
+  if(inst.liquidations24h.total>0){
+    h+='<div style="padding:6px 0;border-bottom:1px solid rgba(42,58,92,.3)"><span style="color:var(--text-secondary)">💥 Liquidaciones 24h</span><div style="font-weight:600;margin-top:2px">$'+(inst.liquidations24h.total/1e6).toFixed(1)+'M<br><span style="font-size:9px;color:var(--accent-red)">🔴L $'+(inst.liquidations24h.longs/1e6).toFixed(1)+'M</span> · <span style="font-size:9px;color:var(--accent-green)">🟢S $'+(inst.liquidations24h.shorts/1e6).toFixed(1)+'M</span></div></div>';
+  }
+  h+='<div style="padding:6px 0;border-bottom:1px solid rgba(42,58,92,.3)"><span style="color:var(--text-secondary)">⚖️ Long/Short</span><div style="font-weight:600;margin-top:2px">'+inst.longShortRatio.ratio.toFixed(2)+'<br><span style="font-size:9px">'+inst.longShortRatio.longAccount.toFixed(0)+'%L / '+inst.longShortRatio.shortAccount.toFixed(0)+'%S</span></div></div>';
+  h+='<div style="padding:6px 0;border-bottom:1px solid rgba(42,58,92,.3);grid-column:span 2"><span style="color:var(--text-secondary)">'+cvdEmoji+' CVD (Cumulative Volume Delta)</span><div style="font-weight:600;margin-top:2px">'+inst.cvd.trend.toUpperCase()+divMark+(inst.cvd.divergence?' (divergencia con precio)':'')+'</div></div>';
+  h+='</div>';
+  if(sig.reasons.length>0){
+    h+='<div style="margin-top:10px;padding:8px;background:rgba(0,0,0,.2);border-radius:8px;font-size:10px"><div style="color:var(--accent-'+biasCls+');margin-bottom:4px;font-weight:700">Señal institucional: '+sig.bias.toUpperCase()+'</div>'+sig.reasons.map(r=>'<div style="color:var(--text-secondary);margin:2px 0">• '+r+'</div>').join('')+'</div>';
+  }
+  h+='</div>';
+}
 h+='<div class="footer">TITAN-AI v9-TS · LSTM v4 (258K params) · Hora Perú: '+nowLima()+'<br>Bot: @yendriel_bot → /status /paper /analisis</div>';
 app.innerHTML=h;
 // IA alive
