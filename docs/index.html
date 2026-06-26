@@ -149,7 +149,6 @@ function updateLivePrice(price, changePct, high, low, vol){
 
   if(pv){
     pv.textContent = usd(price, 0);
-    // Color: verde si subió, rojo si bajó
     if(prevPrice !== null){
       if(price > prevPrice) pv.className = 'price-value up flash';
       else if(price < prevPrice) pv.className = 'price-value down flash';
@@ -169,9 +168,30 @@ function updateLivePrice(price, changePct, high, low, vol){
   if(li){
     li.textContent = 'EN VIVO · ' + nowLima();
   }
-  // Actualizar current price en posición abierta
+  // Actualizar current price en posición abierta Y recalcular PnL en tiempo real
   const cp = document.getElementById('currentPriceDisplay');
   if(cp) cp.textContent = usd(price, 0);
+  // Recalcular PnL en tiempo real si hay posición abierta
+  if(cO && cO.entryPrice){
+    const isLong = cO.direction === 'LONG';
+    const priceDiff = isLong ? (price - cO.entryPrice) : (cO.entryPrice - price);
+    const livePnl = (cO.sizeBtc || 0) * priceDiff;
+    const livePct = cO.sizeUsd > 0 ? (livePnl / cO.sizeUsd) * 100 : 0;
+    // Actualizar el elemento PnL
+    const pnlEl = document.getElementById('pnlDisplay');
+    if(pnlEl){
+      const pnlColor = livePnl >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+      const pnlSign = livePnl >= 0 ? '+' : '';
+      pnlEl.style.color = pnlColor;
+      pnlEl.textContent = pnlSign + fmt(livePnl, 4) + ' (' + livePct.toFixed(2) + '%)';
+    }
+    // Actualizar equity en tiempo real
+    const eqEl = document.getElementById('equityDisplay');
+    if(eqEl && cP && cP.currentBalance){
+      const liveEquity = cP.currentBalance + livePnl;
+      eqEl.textContent = usd(liveEquity, 2);
+    }
+  }
 }
 
 function updateChart(candle, isClosed){
@@ -223,7 +243,7 @@ h+='<div class="signal-card"><div class="signal-status"><div class="signal-dot '
 if(t){const iu=t.changePct24h>=0;h+='<div class="card" style="margin-bottom:12px"><div class="card-title">📈 Precio BTC/USDT · EN VIVO</div><div class="price-main"><span class="price-value" id="livePrice">'+usd(t.price,0)+'</span><span class="price-change '+(iu?'up':'down')+'" id="liveChange">'+(iu?'▲':'▼')+' '+t.changePct24h.toFixed(2)+'%</span></div><div class="price-range" id="liveStats"><span>H: '+usd(t.high24h,0)+'</span><span>L: '+usd(t.low24h,0)+'</span><span>Vol: $'+(t.quoteVolume24h/1e9).toFixed(2)+'B</span></div><div class="indicators-row"><span class="ema30">EMA30 '+usd(sig.ema30,0)+'</span><span class="ema100">EMA100 '+usd(sig.ema100,0)+'</span><span class="rsi">RSI '+sig.rsi.toFixed(0)+'</span><span>'+iRSI(sig.rsi)+'</span><span>'+iVol(ind.volIa)+'</span></div></div>'}
 h+='<div class="chart-container"><div class="chart-info"><span>BTC/USDT · 4H</span><span style="color:var(--accent-gold)">EMA30 '+usd(sig.ema30,0)+'</span><span style="color:var(--accent-purple)">EMA100 '+usd(sig.ema100,0)+'</span><span style="color:var(--accent-blue)">RSI '+sig.rsi.toFixed(0)+'</span></div><canvas id="chart" style="height:440px"></canvas></div>';
 h+='<div class="rsi-container"><div class="rsi-label">RSI (14) · Overbought: 70 · Oversold: 30</div><canvas id="rsiChart" style="height:90px"></canvas></div>';
-if(ot){const ol=ot.direction==='LONG',pnl=pt.unrealizedPnl||0,pp=ot.sizeUsd>0?(pnl/ot.sizeUsd)*100:0;h+='<div class="card" style="margin-bottom:12px;border-color:'+(ol?'rgba(0,212,170,.3)':'rgba(255,107,107,.3)')+'"><div class="card-title">🎯 Posición · '+(ol?'LONG 🟢':'SHORT 🔴')+(ot.trailingActive?' · ⚡ TRAILING':'')+(ot.partialClosed?' · ✅ TP1':'')+'</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div class="signal-info-item"><div class="signal-info-label">Entry</div><div class="signal-info-value">'+usd(ot.entryPrice,0)+'</div></div><div class="signal-info-item"><div class="signal-info-label">Current</div><div class="signal-info-value" style="color:var(--accent-gold)" id="currentPriceDisplay">'+usd(pt.currentPrice,0)+'</div></div><div class="signal-info-item"><div class="signal-info-label">Stop Loss</div><div class="signal-info-value" style="color:var(--accent-red)">'+usd(ot.stopLoss,0)+'</div></div><div class="signal-info-item"><div class="signal-info-label">Take Profit</div><div class="signal-info-value" style="color:var(--accent-green)">'+usd(ot.takeProfit1,0)+'</div></div><div class="signal-info-item"><div class="signal-info-label">Size</div><div class="signal-info-value">'+usd(ot.sizeUsd,2)+'</div></div><div class="signal-info-item"><div class="signal-info-label">PnL</div><div class="signal-info-value" style="color:'+(pnl>=0?'var(--accent-green)':'var(--accent-red)')+'">'+(pnl>=0?'+':'')+fmt(pnl,2)+' ('+pp.toFixed(1)+'%)</div></div></div></div>'}
+if(ot){const ol=ot.direction==='LONG',pnl=pt.unrealizedPnl||0,pp=ot.sizeUsd>0?(pnl/ot.sizeUsd)*100:0;h+='<div class="card" style="margin-bottom:12px;border-color:'+(ol?'rgba(0,212,170,.3)':'rgba(255,107,107,.3)')+'"><div class="card-title">🎯 Posición · '+(ol?'LONG 🟢':'SHORT 🔴')+(ot.trailingActive?' · ⚡ TRAILING':'')+(ot.partialClosed?' · ✅ TP1':'')+'</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div class="signal-info-item"><div class="signal-info-label">Entry</div><div class="signal-info-value">'+usd(ot.entryPrice,0)+'</div></div><div class="signal-info-item"><div class="signal-info-label">Current</div><div class="signal-info-value" style="color:var(--accent-gold)" id="currentPriceDisplay">'+usd(pt.currentPrice,0)+'</div></div><div class="signal-info-item"><div class="signal-info-label">Stop Loss</div><div class="signal-info-value" style="color:var(--accent-red)">'+usd(ot.stopLoss,0)+'</div></div><div class="signal-info-item"><div class="signal-info-label">Take Profit</div><div class="signal-info-value" style="color:var(--accent-green)">'+usd(ot.takeProfit1,0)+'</div></div><div class="signal-info-item"><div class="signal-info-label">Size</div><div class="signal-info-value">'+usd(ot.sizeUsd,2)+'</div></div><div class="signal-info-item"><div class="signal-info-label">PnL</div><div class="signal-info-value" id="pnlDisplay" style="color:'+(pnl>=0?'var(--accent-green)':'var(--accent-red)')+'">'+(pnl>=0?'+':'')+fmt(pnl,4)+' ('+pp.toFixed(2)+'%)</div></div>'+(ot.bestPrice?('<div class="signal-info-item"><div class="signal-info-label">Best Price</div><div class="signal-info-value" style="color:var(--accent-blue)">'+usd(ot.bestPrice,0)+'</div></div>'): '')+'</div></div>'}
 else{h+='<div class="card" style="margin-bottom:12px"><div class="card-title">📡 Señal Actual</div><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><span style="font-size:14px;font-weight:700;color:'+dc+'">'+(isL?'🟢 LONG':isS?'🔴 SHORT':'⚪ NEUTRAL')+'</span><span style="font-size:11px;color:var(--text-secondary)">'+sig.reason+'</span></div><div class="waiting-signal">⏳ Esperando señal de entrada — la IA monitorea el mercado 24/7</div></div>'}
 h+='</div><div>';
 h+='<div class="card" style="margin-bottom:12px;border-color:rgba(0,212,170,.2)"><div class="card-title">🧠 IA v4 — Estado en Vivo</div><div id="iaAlivePanel" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div class="signal-info-item" style="border-color:rgba(0,212,170,.3)"><div class="signal-info-label">Estado</div><div class="signal-info-value" style="color:var(--accent-green);display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:50%;background:var(--accent-green);animation:p 1.5s infinite"></span>VIVA</div></div><div class="signal-info-item"><div class="signal-info-label">Predicciones</div><div class="signal-info-value" id="iaPredCount">—</div></div><div class="signal-info-item"><div class="signal-info-label">Última predicción</div><div class="signal-info-value" id="iaLastPred" style="font-size:11px">—</div></div><div class="signal-info-item"><div class="signal-info-label">Vol IA actual</div><div class="signal-info-value" id="iaVolLive" style="color:var(--accent-purple)">—</div></div><div class="signal-info-item"><div class="signal-info-label">Peso Fold 1/2/3</div><div class="signal-info-value" id="iaWeights" style="font-size:10px">—</div></div><div class="signal-info-item"><div class="signal-info-label">Próxima evaluación</div><div class="signal-info-value" id="iaNextEval" style="font-size:10px">—</div></div></div><div style="margin-top:10px;padding:8px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;font-size:10px;color:var(--text-secondary)"><div style="color:var(--accent-green);margin-bottom:4px">📡 Actividad reciente:</div><div id="iaLog">● IA monitoreando mercado... ● WebSocket conectado ● Esperando señal EMA 30/100</div></div></div>';
@@ -237,7 +257,7 @@ if(he.length>0)h+='<div class="analyst-row"><span class="label">Evento</span><sp
 if(ev){const vCls=ev.veredicto==='APROBAR'?'buy':ev.veredicto==='OPERAR_50'?'wait':'wait',vText=ev.veredicto==='APROBAR'?'APROBAR':ev.veredicto==='OPERAR_50'?'OPERAR 50%':'ESPERAR';h+='<div class="verdict-box"><div class="verdict-text '+vCls+'">'+vText+'</div><div class="verdict-size">Score: '+ev.scoreOperable+'/100 · Size: '+ev.sizeSugerido+'x</div><div style="font-size:10px;color:var(--text-secondary);margin-top:6px">'+ev.justificacion+'</div></div>'}h+='</div>';
 if(a.news&&a.news.length>0){h+='<div class="card" style="margin-bottom:12px"><div class="card-title">📰 Noticias (actualizadas cada 4H)</div>';a.news.slice(0,5).forEach(n=>{const se=n.sentiment==='alcista'?'🟢':n.sentiment==='bajista'?'🔴':'⚪';const ic=n.impact==='alta'?'var(--accent-red)':n.impact==='media'?'var(--accent-gold)':'var(--text-secondary)';h+='<div style="font-size:10px;padding:5px 0;border-bottom:1px solid rgba(42,58,92,.3)"><span style="color:'+ic+';font-weight:700">['+n.impact.toUpperCase()+']</span> '+se+' '+n.title.slice(0,60)+(n.title.length>60?'…':'')+'</div>'});h+='</div>'}}
 h+='</div></div>';
-h+='<div class="grid-bottom"><div class="metric-card"><div class="metric-label">Equity</div><div class="metric-value '+(ip?'green':'red')+'">'+usd(p.equity,2)+'</div><div class="metric-sub">'+(tr>=0?'+':'')+tr.toFixed(2)+'%</div></div><div class="metric-card"><div class="metric-label">Win Rate</div><div class="metric-value">'+wr.toFixed(0)+'%</div><div class="metric-sub">'+p.wins+'W / '+p.losses+'L</div></div><div class="metric-card"><div class="metric-label">Trades</div><div class="metric-value">'+p.totalTrades+'</div><div class="metric-sub">Abiertos: '+(ot?1:0)+'</div></div><div class="metric-card"><div class="metric-label">Max DD</div><div class="metric-value red">'+p.maxDrawdown.toFixed(1)+'%</div><div class="metric-sub">Peak: '+usd(p.peakEquity,2)+'</div></div></div>';
+h+='<div class="grid-bottom"><div class="metric-card"><div class="metric-label">Equity</div><div class="metric-value '+(ip?'green':'red')+'" id="equityDisplay">'+usd(p.equity,2)+'</div><div class="metric-sub">'+(tr>=0?'+':'')+tr.toFixed(2)+'%</div></div><div class="metric-card"><div class="metric-label">Win Rate</div><div class="metric-value">'+wr.toFixed(0)+'%</div><div class="metric-sub">'+p.wins+'W / '+p.losses+'L</div></div><div class="metric-card"><div class="metric-label">Trades</div><div class="metric-value">'+p.totalTrades+'</div><div class="metric-sub">Abiertos: '+(ot?1:0)+'</div></div><div class="metric-card"><div class="metric-label">Max DD</div><div class="metric-value red">'+p.maxDrawdown.toFixed(1)+'%</div><div class="metric-sub">Peak: '+usd(p.peakEquity,2)+'</div></div></div>';
 
 // === PANEL INSTITUCIONAL ===
 if(pt.institutional){
