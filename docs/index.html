@@ -826,10 +826,31 @@ async function loadData(){
 const app=document.getElementById('app');
 app.innerHTML='<div class="loading"><div class="spinner"></div><p>Actualizando datos</p></div>';
 try{
+// FIX: Hacer fetch directo al backend cada vez (datos en tiempo real, cada 2 min)
+// Si el backend cae, usar EMBEDDED_DATA como fallback
+const BACKEND_URL='https://yendriel.onrender.com';
+let backendOK=false;
+try{
+const[rb1,rb2,rb3]=await Promise.all([
+fetch(BACKEND_URL+'/api/paper-trading',{cache:'no-store',signal:AbortSignal.timeout(8000)}),
+fetch(BACKEND_URL+'/api/dashboard',{cache:'no-store',signal:AbortSignal.timeout(8000)}),
+fetch(BACKEND_URL+'/api/analyst',{cache:'no-store',signal:AbortSignal.timeout(8000)})
+]);
+if(rb1.ok&&rb2.ok&&rb3.ok){
+pt=await rb1.json();dash=await rb2.json();an=await rb3.json();
+ts={updated:new Date().toISOString()};
+backendOK=true;
+}
+}catch(backendErr){
+console.warn('Backend no respondió, usando EMBEDDED_DATA:',backendErr);
+}
+if(!backendOK){
+// Fallback: usar EMBEDDED_DATA (datos del último data_updater.py run)
 if(HE){pt=window.EMBEDDED_DATA.paperTrading;dash=window.EMBEDDED_DATA.dashboard;an=window.EMBEDDED_DATA.analyst;ts={updated:window.EMBEDDED_DATA.timestamp}}
 else{B=window.location.origin+window.location.pathname.replace(/[^/]*$/,'');
 const[r1,r2,r3,r4]=await Promise.all([fetch(B+'data/paper-trading.json?v='+Date.now(),{cache:'no-store'}),fetch(B+'data/dashboard.json?v='+Date.now(),{cache:'no-store'}),fetch(B+'data/analyst.json?v='+Date.now(),{cache:'no-store'}),fetch(B+'data/timestamp.json?v='+Date.now(),{cache:'no-store'})]);
 pt=await r1.json();dash=await r2.json();an=await r3.json();ts=await r4.json()}
+}
 if(!pt.success)throw new Error('Sin datos');
 const p=pt.portfolio,sig=pt.signal,ot=pt.openTrade,isL=sig.direction==='LONG',isS=sig.direction==='SHORT',dc=isL?'var(--emerald-bright)':isS?'var(--red-bright)':'var(--text-secondary)',tr=((p.equity-p.initialCapital)/p.initialCapital)*100,ip=p.totalPnl>=0,wr=p.totalTrades>0?(p.wins/p.totalTrades)*100:0,t=dash?.ticker,ind=dash?.indicators||{},a=an?.report,ev=a?.signalEval;
 cC=dash?.candles||[];cS=sig;cO=ot;cP=p;
@@ -888,12 +909,12 @@ app.innerHTML=h;
 if(window.updateIAAlive)updateIAAlive(pt,sig,ev,pt.ensembleState);
 if(!wsPrice) initWebSocket();
 setTimeout(()=>{const cc=document.getElementById('chart'),rc=document.getElementById('rsiChart');if(cc&&cC.length>0&&cS)drawChart(cc,cC,cS.ema30,cS.ema100,cO?.entryPrice||null,cO?.stopLoss||null,cO?.takeProfit1||null,cO?.direction||cS.direction);if(rc&&cC.length>0)drawRSI(rc,cC)},50);
-setTimeout(rotateIALog,5000);setTimeout(loadData,120000);
+setTimeout(rotateIALog,5000);setTimeout(loadData,60000);
 }catch(e){app.innerHTML='<div style="text-align:center;padding:60px;color:var(--text-secondary)"><p style="font-size:14px;color:var(--red-bright);font-weight:600">⚠️ '+e.message+'</p><p style="font-size:11px;margin-top:8px">Reintentando en 10s…</p></div>';setTimeout(loadData,10000)}
 }
 window.addEventListener('resize',()=>{setTimeout(()=>{const cc=document.getElementById('chart'),rc=document.getElementById('rsiChart');if(cc&&cC.length>0&&cS)drawChart(cc,cC,cS.ema30,cS.ema100,cO?.entryPrice||null,cO?.stopLoss||null,cO?.takeProfit1||null,cO?.direction||cS.direction);if(rc&&cC.length>0)drawRSI(rc,cC)},100)});
 
-function rotateIALog(){var l=document.getElementById('iaLog');if(!l)return;var m=['● IA monitoreando mercado... ● WebSocket conectado ● Esperando señal EMA 30/100','● LSTM v4 procesando velas 5m... ● 3 folds activos ● Scaler normalizando input','● Cubo multitemporal 24x4x5 construido ● Contexto diario calculado ● Listo para predecir','● Feedback loop: evaluando predicciones pasadas ● Pesos adaptativos: activos ● Ensemble: operacional','● Binance API: conectada ● Neon DB: conectada ● Telegram: webhook activo ● 24/7 operacional'];l.textContent=m[Math.floor(Date.now()/5000)%m.length];setTimeout(rotateIALog,5000)}
+function rotateIALog(){var l=document.getElementById('iaLog');if(!l)return;var m=['● IA monitoreando mercado... ● WebSocket conectado ● Esperando señal EMA 30/100','● LSTM v4 procesando velas 5m... ● 3 folds activos ● Scaler normalizando input','● Cubo multitemporal 24x4x5 construido ● Contexto diario calculado ● Listo para predecir','● Feedback loop: evaluando predicciones pasadas ● Pesos adaptativos: activos ● Ensemble: operacional','● OKX API: conectada ● Neon DB: conectada ● Telegram: webhook activo ● 24/7 operacional'];l.textContent=m[Math.floor(Date.now()/5000)%m.length];setTimeout(rotateIALog,5000)}
 
 loadData();
 </script>
