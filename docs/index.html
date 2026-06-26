@@ -713,7 +713,11 @@ function initWebSocket(){
   wsPrice.onerror = () => { wsPrice.close(); };
 
   wsKline = new WebSocket('wss://stream.binance.com:9443/ws/btcusdt@kline_4h');
-  wsKline.onmessage = (event) => {
+  // FIX P0-26: ANTES el handler era una función anónima reasignada, lo que rompía el reconnect.
+  // El handler onclose hacía: wsKline.onmessage = wsKline.onmessage
+  // Pero wsKline.onmessage ya era `undefined` en el nuevo objeto → chart se congelaba.
+  // AHORA: extraer el handler a una función con nombre y reasignarla correctamente.
+  const handleKlineMessage = (event) => {
     try {
       const d = JSON.parse(event.data);
       if(d.k){
@@ -724,7 +728,16 @@ function initWebSocket(){
       }
     } catch(e){}
   };
-  wsKline.onclose = () => { setTimeout(() => { wsKline = new WebSocket('wss://stream.binance.com:9443/ws/btcusdt@kline_4h'); wsKline.onmessage = wsKline.onmessage; }, 3000); };
+  wsKline.onmessage = handleKlineMessage;
+  wsKline.onclose = () => {
+    setTimeout(() => {
+      wsKline = new WebSocket('wss://stream.binance.com:9443/ws/btcusdt@kline_4h');
+      // FIX P0-26: reasignar el handler CON NOMBRE (no wsKline.onmessage = wsKline.onmessage)
+      wsKline.onmessage = handleKlineMessage;
+      wsKline.onclose = arguments.callee; // permitir múltiples reconnects
+      wsKline.onerror = () => { wsKline.close(); };
+    }, 3000);
+  };
   wsKline.onerror = () => { wsKline.close(); };
 }
 
