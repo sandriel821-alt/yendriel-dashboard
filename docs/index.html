@@ -822,9 +822,61 @@ function updateChart(candle, isClosed){
 
 function updateIAAlive(pt,sig,ev,es){const pc=document.getElementById('iaPredCount');if(pc&&es)pc.textContent=es.totalEvaluated||0;const lp=document.getElementById('iaLastPred');if(lp){const ts=pt.timestamp?new Date(pt.timestamp).toLocaleString('es-PE',{timeZone:'America/Lima',hour:'2-digit',minute:'2-digit',second:'2-digit'}):'—';lp.textContent=ts}const vl=document.getElementById('iaVolLive');if(vl&&sig)vl.textContent=(sig.volIa*100).toFixed(4)+'%';const w=document.getElementById('iaWeights');if(w&&es)w.textContent=(es.weightFold1*100).toFixed(1)+'% / '+(es.weightFold2*100).toFixed(1)+'% / '+(es.weightFold3*100).toFixed(1)+'%';const ne=document.getElementById('iaNextEval');if(ne){const n=new Date(Math.ceil(Date.now()/(4*3600*1000))*(4*3600*1000));ne.textContent=n.toLocaleString('es-PE',{timeZone:'America/Lima',hour:'2-digit',minute:'2-digit'})}}
 
-async function loadData(){
+// FIX UX: Actualización silenciosa — solo cambia los valores numéricos en el DOM
+// sin reescribir todo el HTML. Esto permite al usuario leer el dashboard sin
+// que se reinicie la vista cada 15s.
+function updateValuesInPlace(p,sig,ot,t,ind,ev,a,ptData){
+  // Equity en header
+  const capBadge=document.querySelector('.capital-badge');
+  if(capBadge){
+    const txt=capBadge.textContent;
+    capBadge.innerHTML='<span class="label">Equity</span>'+usd(p.equity,2);
+  }
+  // Confianza IA
+  const sigInfo=document.querySelectorAll('.signal-info-item .signal-info-value');
+  if(sigInfo[0])sigInfo[0].textContent=(sig.confidence*100).toFixed(0)+'%';
+  if(sigInfo[1])sigInfo[1].textContent=iRegime(sig.regime).toUpperCase();
+  // Precio BTC
+  if(t){
+    const lp=document.getElementById('livePrice');
+    if(lp)lp.textContent=usd(t.price,0);
+    const lc=document.getElementById('liveChange');
+    if(lc){const iu=t.changePct24h>=0;lc.textContent=(iu?'▲':'▼')+' '+t.changePct24h.toFixed(2)+'%';lc.className='price-change tnum '+(iu?'up':'down');}
+    const ls=document.getElementById('liveStats');
+    if(ls)ls.innerHTML='<span>H: '+usd(t.high24h,0)+'</span><span>L: '+usd(t.low24h,0)+'</span><span>Vol: $'+(t.quoteVolume24h/1e9).toFixed(2)+'B</span>';
+  }
+  // Current price en posición
+  const cpd=document.getElementById('currentPriceDisplay');
+  if(cpd)cpd.textContent=usd(ptData.currentPrice,0);
+  // PnL en posición
+  const pnlDisp=document.getElementById('pnlDisplay');
+  if(pnlDisp&&ot){
+    const pnl=ptData.unrealizedPnl||0;
+    const pp=ot.sizeUsd>0?(pnl/ot.sizeUsd)*100:0;
+    pnlDisp.textContent=(pnl>=0?'+':'')+fmt(pnl,4)+' ('+pp.toFixed(2)+'%)';
+    pnlDisp.style.color=pnl>=0?'var(--emerald-bright)':'var(--red-bright)';
+  }
+  // Métricas inferiores
+  const ed=document.getElementById('equityDisplay');
+  if(ed){
+    const tr=((p.equity-p.initialCapital)/p.initialCapital)*100;
+    ed.textContent=usd(p.equity,2);
+    ed.className='metric-value '+(p.totalPnl>=0?'green':'red')+' tnum';
+    const sub=ed.nextElementSibling;
+    if(sub)sub.textContent=(tr>=0?'+':'')+tr.toFixed(2)+'%';
+  }
+  // Live indicator (estado conexión)
+  const li=document.getElementById('liveIndicator');
+  if(li)li.textContent='LIVE';
+}
+
+async function loadData(isAutoRefresh){
 const app=document.getElementById('app');
-app.innerHTML='<div class="loading"><div class="spinner"></div><p>Actualizando datos</p></div>';
+// FIX UX: Solo mostrar spinner en la PRIMERA carga, no en auto-refresh
+// Esto permite al usuario leer el dashboard sin que se reinicie cada 15s
+if(!isAutoRefresh){
+  app.innerHTML='<div class="loading"><div class="spinner"></div><p>Actualizando datos</p></div>';
+}
 try{
 // FIX: Hacer fetch directo al backend cada vez (datos en tiempo real, cada 2 min)
 // Si el backend cae, usar EMBEDDED_DATA como fallback
@@ -856,6 +908,19 @@ const p=pt.portfolio,sig=pt.signal,ot=pt.openTrade,isL=sig.direction==='LONG',is
 cC=dash?.candles||[];cS=sig;cO=ot;cP=p;
 let accion='ESPERAR',accCls='wait',accDot='wait';
 if(ev&&ev.veredicto==='APROBAR'){accion=isL?'COMPRAR':'VENDER';accCls=isL?'buy':'sell';accDot=isL?'buy':'sell'}else if(ev&&ev.veredicto==='OPERAR_50'){accion='OPERAR 50%'}
+
+// FIX UX: Si es auto-refresh Y ya hay contenido renderizado, actualizar solo valores
+// en vez de reescribir todo el HTML (evita que se reinicie la vista)
+if(isAutoRefresh && app.querySelector('.grid-main')){
+  updateValuesInPlace(p,sig,ot,t,ind,ev,a,pt);
+  // Actualizar IA panel
+  if(window.updateIAAlive)updateIAAlive(pt,sig,ev,pt.ensembleState);
+  // Redibujar charts suavemente
+  setTimeout(()=>{const cc=document.getElementById('chart'),rc=document.getElementById('rsiChart');if(cc&&cC.length>0&&cS)drawChart(cc,cC,cS.ema30,cS.ema100,cO?.entryPrice||null,cO?.stopLoss||null,cO?.takeProfit1||null,cO?.direction||cS.direction);if(rc&&cC.length>0)drawRSI(rc,cC)},50);
+  return; // Salir sin reescribir HTML
+}
+
+// Primera carga: renderizar todo el HTML completo
 let h='';
 h+='<div class="header"><div class="header-left"><div class="logo-icon">T</div><div><div class="logo-text">TITAN<span>-AI</span></div><div class="logo-sub">Pro Terminal · v9-TS</div></div></div><div class="header-right"><div class="capital-badge"><span class="label">Equity</span>'+usd(p.equity,2)+'</div>'+(pt.iaActive?'<div class="ia-badge">IA v4 ACTIVA</div>':'<div class="ia-badge fallback">Fallback Mode</div>')+'<div class="live-indicator"><div class="live-dot"></div><span id="liveIndicator">CONECTANDO…</span></div></div></div>';
 h+='<div class="grid-main"><div>';
@@ -909,8 +974,17 @@ app.innerHTML=h;
 if(window.updateIAAlive)updateIAAlive(pt,sig,ev,pt.ensembleState);
 if(!wsPrice) initWebSocket();
 setTimeout(()=>{const cc=document.getElementById('chart'),rc=document.getElementById('rsiChart');if(cc&&cC.length>0&&cS)drawChart(cc,cC,cS.ema30,cS.ema100,cO?.entryPrice||null,cO?.stopLoss||null,cO?.takeProfit1||null,cO?.direction||cS.direction);if(rc&&cC.length>0)drawRSI(rc,cC)},50);
-setTimeout(rotateIALog,5000);setTimeout(loadData,15000);
-}catch(e){app.innerHTML='<div style="text-align:center;padding:60px;color:var(--text-secondary)"><p style="font-size:14px;color:var(--red-bright);font-weight:600">⚠️ '+e.message+'</p><p style="font-size:11px;margin-top:8px">Reintentando en 10s…</p></div>';setTimeout(loadData,10000)}
+setTimeout(rotateIALog,5000);setTimeout(()=>loadData(true),15000);
+}catch(e){
+  // FIX UX: En auto-refresh, NO mostrar pantalla de error completa (rompe la lectura)
+  // Solo loguear en consola y reintentar silenciosamente
+  if(isAutoRefresh){
+    console.warn('Auto-refresh falló (reintentando en 15s):',e.message);
+    setTimeout(()=>loadData(true),15000);
+  } else {
+    app.innerHTML='<div style="text-align:center;padding:60px;color:var(--text-secondary)"><p style="font-size:14px;color:var(--red-bright);font-weight:600">⚠️ '+e.message+'</p><p style="font-size:11px;margin-top:8px">Reintentando en 10s…</p></div>';setTimeout(()=>loadData(false),10000);
+  }
+}
 }
 window.addEventListener('resize',()=>{setTimeout(()=>{const cc=document.getElementById('chart'),rc=document.getElementById('rsiChart');if(cc&&cC.length>0&&cS)drawChart(cc,cC,cS.ema30,cS.ema100,cO?.entryPrice||null,cO?.stopLoss||null,cO?.takeProfit1||null,cO?.direction||cS.direction);if(rc&&cC.length>0)drawRSI(rc,cC)},100)});
 
