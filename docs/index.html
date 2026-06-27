@@ -1149,16 +1149,16 @@ h+='</div></div>';
 // === METRICS GRID (with trend indicators) ===
 h+='<div class="grid-bottom"><div class="metric-card"><div class="metric-label">Equity</div><div class="metric-value '+(ip?'green':'red')+' tnum" id="equityDisplay">'+usd(p.equity,2)+'</div><div class="metric-sub">'+(tr>=0?'▲ +':'▼ ')+tr.toFixed(2)+'%</div></div><div class="metric-card blue"><div class="metric-label">Win Rate</div><div class="metric-value tnum">'+wr.toFixed(0)+'%</div><div class="metric-sub">'+p.wins+'W / '+p.losses+'L</div></div><div class="metric-card gold"><div class="metric-label">Trades</div><div class="metric-value tnum">'+p.totalTrades+'</div><div class="metric-sub">Open: '+(ot?1:0)+'</div></div><div class="metric-card red"><div class="metric-label">Max DD</div><div class="metric-value red tnum">'+p.maxDrawdown.toFixed(1)+'%</div><div class="metric-sub">Peak: '+usd(p.peakEquity,2)+'</div></div></div>';
 // === TRADE HISTORY (mini tabla con últimos 5 trades cerrados) ===
-const ct=pt.closedTrades||[];
-if(ct.length>0){
-  h+='<div class="card" style="margin-bottom:8px"><div class="card-header"><span class="card-tag">TRADE HISTORY · ÚLTIMOS '+Math.min(ct.length,5)+'</span><span class="card-ticker">CLOSED</span></div>';
+var closedTradesList=pt.closedTrades||[];
+if(closedTradesList.length>0){
+  h+='<div class="card" style="margin-bottom:8px"><div class="card-header"><span class="card-tag">TRADE HISTORY · ÚLTIMOS '+Math.min(closedTradesList.length,5)+'</span><span class="card-ticker">CLOSED</span></div>';
   h+='<div style="font-size:9px;font-family:var(--mono)">';
   h+='<div style="display:grid;grid-template-columns:42px 48px 1fr 1fr 60px 40px;gap:4px;padding:4px 6px;border-bottom:1px solid var(--border);color:var(--text-muted);font-weight:700;letter-spacing:0.5px;text-transform:uppercase;font-size:8px"><span>DIR</span><span>RESULT</span><span>ENTRY</span><span>EXIT</span><span>PnL</span><span>LEV</span></div>';
-  ct.slice(0,5).forEach(t=>{
-    const isW=(t.pnlUsd||0)>=0;
-    const resCol=t.status==='CLOSED_TP'?'var(--emerald-bright)':t.status==='CLOSED_SL'?'var(--red-bright)':t.status==='CLOSED_TRAIL'?'var(--cyan)':'var(--text-secondary)';
-    const resTxt=t.status==='CLOSED_TP'?'TP':t.status==='CLOSED_SL'?'SL':t.status==='CLOSED_TRAIL'?'TRL':t.status==='CLOSED_MANUAL'?'MAN':t.status==='CLOSED_TIMEOUT'?'TMO':'—';
-    const dirCol=t.direction==='LONG'?'var(--emerald-bright)':'var(--red-bright)';
+  closedTradesList.slice(0,5).forEach(function(t){
+    var isW=(t.pnlUsd||0)>=0;
+    var resCol=t.status==='CLOSED_TP'?'var(--emerald-bright)':t.status==='CLOSED_SL'?'var(--red-bright)':t.status==='CLOSED_TRAIL'?'var(--cyan)':'var(--text-secondary)';
+    var resTxt=t.status==='CLOSED_TP'?'TP':t.status==='CLOSED_SL'?'SL':t.status==='CLOSED_TRAIL'?'TRL':t.status==='CLOSED_MANUAL'?'MAN':t.status==='CLOSED_TIMEOUT'?'TMO':'—';
+    var dirCol=t.direction==='LONG'?'var(--emerald-bright)':'var(--red-bright)';
     h+='<div style="display:grid;grid-template-columns:42px 48px 1fr 1fr 60px 40px;gap:4px;padding:3px 6px;border-bottom:1px solid rgba(48,54,61,0.3);font-variant-numeric:tabular-nums">';
     h+='<span style="color:'+dirCol+';font-weight:700">'+t.direction+'</span>';
     h+='<span style="color:'+resCol+';font-weight:700">'+resTxt+'</span>';
@@ -1171,25 +1171,25 @@ if(ct.length>0){
   h+='</div></div>';
 }
 // === EQUITY SPARKLINE (mini gráfico del equity en el tiempo) ===
-const equityPoints=ct.slice(0,10).reverse().map(t=>t.pnlUsd||0);
-if(equityPoints.length>1){
-  let cumEquity=p.initialCapital;
-  const equityCurve=equityPoints.map(pnl=>{cumEquity+=pnl;return cumEquity});
-  equityCurve.push(p.equity);
-  const minEq=Math.min(...equityCurve),maxEq=Math.max(...equityCurve);
-  const range=maxEq-minEq||1;
-  const w=200,h=40;
-  const pts=equityCurve.map((v,i)=>{
-    const x=(i/(equityCurve.length-1))*w;
-    const y=h-((v-minEq)/range)*h;
+var eqPoints=closedTradesList.slice(0,10).reverse().map(function(t){return t.pnlUsd||0});
+if(eqPoints.length>1){
+  var cumEq=p.initialCapital;
+  var eqCurve=eqPoints.map(function(pnl){cumEq+=pnl;return cumEq});
+  eqCurve.push(p.equity);
+  var minEq=Math.min.apply(null,eqCurve),maxEq=Math.max.apply(null,eqCurve);
+  var eqRange=maxEq-minEq||1;
+  var sw=200,sh=40;
+  var eqPts=eqCurve.map(function(v,i){
+    var x=(i/(eqCurve.length-1))*sw;
+    var y=sh-((v-minEq)/eqRange)*sh;
     return x.toFixed(1)+','+y.toFixed(1);
   }).join(' ');
-  const eqCol=p.equity>=p.initialCapital?'var(--emerald-bright)':'var(--red-bright)';
-  const eqFill=p.equity>=p.initialCapital?'rgba(63,185,80,0.1)':'rgba(248,81,73,0.1)';
-  h+='<div class="card" style="margin-bottom:8px"><div class="card-header"><span class="card-tag">EQUITY CURVE · '+equityCurve.length+' PUNTOS</span><span class="card-ticker" style="color:'+eqCol+'">'+usd(p.equity,2)+'</span></div>';
-  h+='<svg width="100%" height="'+h+'" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none" style="display:block">';
-  h+='<polygon points="0,'+h+' '+pts+' '+w+','+h+'" fill="'+eqFill+'" stroke="none"/>';
-  h+='<polyline points="'+pts+'" fill="none" stroke="'+eqCol+'" stroke-width="1.5" stroke-linejoin="round"/>';
+  var eqCol=p.equity>=p.initialCapital?'var(--emerald-bright)':'var(--red-bright)';
+  var eqFill=p.equity>=p.initialCapital?'rgba(63,185,80,0.1)':'rgba(248,81,73,0.1)';
+  h+='<div class="card" style="margin-bottom:8px"><div class="card-header"><span class="card-tag">EQUITY CURVE · '+eqCurve.length+' PUNTOS</span><span class="card-ticker" style="color:'+eqCol+'">'+usd(p.equity,2)+'</span></div>';
+  h+='<svg width="100%" height="'+sh+'" viewBox="0 0 '+sw+' '+sh+'" preserveAspectRatio="none" style="display:block">';
+  h+='<polygon points="0,'+sh+' '+eqPts+' '+sw+','+sh+'" fill="'+eqFill+'" stroke="none"/>';
+  h+='<polyline points="'+eqPts+'" fill="none" stroke="'+eqCol+'" stroke-width="1.5" stroke-linejoin="round"/>';
   h+='</svg>';
   h+='<div style="display:flex;justify-content:space-between;font-size:8px;color:var(--text-muted);font-family:var(--mono);margin-top:4px"><span>$'+minEq.toFixed(2)+'</span><span>$'+maxEq.toFixed(2)+'</span></div>';
   h+='</div>';
