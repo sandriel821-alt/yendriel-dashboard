@@ -1083,15 +1083,66 @@ h+='</div><div>';
 // === IA v4 CARD (neural status panel with fold weight mini bars) ===
 const es=pt.ensembleState||{};const w1=es.weightFold1||0.333,w2=es.weightFold2||0.333,w3=es.weightFold3||0.333;
 h+='<div class="card" style="margin-bottom:8px;border-color:var(--border-emerald)"><div class="card-header"><span class="card-tag">IA v4 · NEURAL STATE</span><span class="card-ticker">LSTM 258K</span></div><div id="iaAlivePanel" style="display:grid;grid-template-columns:1fr 1fr;gap:6px"><div class="signal-info-item" style="border-color:var(--border-emerald)"><div class="signal-info-label">Estado</div><div class="signal-info-value" style="color:var(--emerald-bright);display:flex;align-items:center;gap:6px;font-size:13px"><span style="width:7px;height:7px;border-radius:50%;background:var(--emerald);box-shadow:0 0 6px var(--emerald);animation:pulse-dot 1.5s infinite"></span>VIVA</div></div><div class="signal-info-item"><div class="signal-info-label">Predicciones</div><div class="signal-info-value tnum" id="iaPredCount">—</div></div><div class="signal-info-item"><div class="signal-info-label">Ultima prediccion</div><div class="signal-info-value tnum" id="iaLastPred" style="font-size:11px">—</div></div><div class="signal-info-item"><div class="signal-info-label">Vol IA actual</div><div class="signal-info-value tnum" id="iaVolLive" style="color:var(--purple);font-size:13px">—</div></div><div class="signal-info-item" style="grid-column:span 2"><div class="signal-info-label">Peso Fold 1/2/3</div><div id="iaWeights" style="font-size:11px;font-family:var(--mono);margin-top:4px">—</div><div class="fold-bars"><div class="fold-bar"><div class="fold-bar-fill" style="width:'+(w1*100)+'%;background:var(--emerald)"></div></div><div class="fold-bar"><div class="fold-bar-fill" style="width:'+(w2*100)+'%;background:var(--cyan)"></div></div><div class="fold-bar"><div class="fold-bar-fill" style="width:'+(w3*100)+'%;background:var(--purple)"></div></div></div></div><div class="signal-info-item"><div class="signal-info-label">Proxima evaluacion</div><div class="signal-info-value tnum" id="iaNextEval" style="font-size:11px">—</div></div></div><div class="ia-log-box"><div class="ia-log-title">Actividad reciente</div><div id="iaLog">● IA monitoreando mercado... ● WebSocket conectado ● Esperando señal EMA 30/100</div></div></div>';
-// === ANALYST CARD (with sentiment gauge) ===
+// === ANALYST CARD — VERSIÓN INSTITUCIONAL SENIOR ===
 if(a){const fg=a.fearGreed,fgVal=fg?fg.value:50,sentCls=a.sentimentGlobal>=65?'green':a.sentimentGlobal<=35?'red':'gray',sentCol=a.sentimentGlobal>=65?'var(--emerald-bright)':a.sentimentGlobal<=35?'var(--red-bright)':'var(--gold-bright)',fgCls=fgVal<=45?'red':fgVal>=75?'green':'gray',volPct=sig.volIa*100,volCls=volPct<0.2?'green':volPct>0.5?'red':'gold',he=(a.events||[]).filter(e=>e.priority==='alta');
-h+='<div class="analyst-card"><div class="analyst-header"><span class="title">Analista IA</span><span class="analyst-badge">PREMIUM</span></div>';
+h+='<div class="analyst-card"><div class="analyst-header"><span class="title">Analista IA · Institucional</span><span class="analyst-badge">SENIOR</span></div>';
 h+='<div class="sentiment-gauge"><div style="position:relative;width:48px;height:48px;flex-shrink:0"><svg width="48" height="48" viewBox="0 0 48 48" style="transform:rotate(-90deg)"><circle cx="24" cy="24" r="20" fill="none" stroke="rgba(48,54,61,0.6)" stroke-width="4"/><circle cx="24" cy="24" r="20" fill="none" stroke="'+sentCol+'" stroke-width="4" stroke-dasharray="'+(2*Math.PI*20*a.sentimentGlobal/100)+' '+(2*Math.PI*20)+'" stroke-linecap="round"/></svg><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;font-family:var(--mono);color:var(--text-primary)">'+a.sentimentGlobal+'</div></div><div style="flex:1"><div class="sentiment-gauge-label">Sentimiento Global</div><div class="sentiment-gauge-val" style="color:'+sentCol+'">'+a.sentimentLabel+'</div></div></div>';
 h+='<div class="analyst-row"><span class="label">Fear & Greed</span><span class="value '+fgCls+' tnum">'+(fg?fg.value:'—')+' · '+iFG(fg?fg.value:null)+'</span></div>';
-h+='<div class="analyst-row"><span class="label">Volatilidad</span><span class="value '+volCls+' tnum">'+volPct.toFixed(3)+'% · '+iVol(sig.volIa)+'</span></div>';
+h+='<div class="analyst-row"><span class="label">Volatilidad IA</span><span class="value '+volCls+' tnum">'+volPct.toFixed(3)+'% · '+iVol(sig.volIa)+'</span></div>';
 h+='<div class="analyst-row"><span class="label">RSI (14)</span><span class="value '+(sig.rsi>70?'red':sig.rsi<30?'green':'gray')+' tnum">'+sig.rsi.toFixed(0)+' · '+iRSI(sig.rsi)+'</span></div>';
 if(he.length>0)h+='<div class="analyst-row"><span class="label">Evento</span><span class="value gold">⚠ '+he.map(e=>e.type).join(', ')+'</span></div>';
-if(ev){const vCls=ev.veredicto==='APROBAR'?'buy':ev.veredicto==='OPERAR_50'?'wait':'wait',vText=ev.veredicto==='APROBAR'?'APROBAR':ev.veredicto==='OPERAR_50'?'OPERAR 50%':'ESPERAR';h+='<div class="verdict-box"><div class="verdict-text '+vCls+'">'+vText+'</div><div class="verdict-size">Score: '+ev.scoreOperable+'/100 · Size: '+ev.sizeSugerido+'x</div><div class="verdict-just">'+ev.justificacion+'</div></div>'}h+='</div>';
+
+// === NUEVOS CAMPOS INSTITUCIONALES ===
+if(ev){
+  // Confluencia score + R:R + Bias
+  h+='<div style="margin-top:10px;padding:8px;background:rgba(1,4,9,0.4);border:1px solid var(--border);border-radius:6px">';
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;font-size:9px">';
+  const confCol=ev.confluenciaScore>=60?'var(--emerald-bright)':ev.confluenciaScore>=40?'var(--gold-bright)':'var(--red-bright)';
+  const rrCol=ev.riskRewardRatio>=2?'var(--emerald-bright)':ev.riskRewardRatio>=1.5?'var(--gold-bright)':'var(--red-bright)';
+  const biasCol=ev.institutionalBias==='BULLISH'?'var(--emerald-bright)':ev.institutionalBias==='BEARISH'?'var(--red-bright)':'var(--text-secondary)';
+  h+='<div style="text-align:center"><div style="color:var(--text-muted);font-weight:700;letter-spacing:0.5px;text-transform:uppercase">Confluencia</div><div style="color:'+confCol+';font-size:16px;font-weight:800;font-family:var(--mono);margin-top:2px">'+ev.confluenciaScore+'%</div></div>';
+  h+='<div style="text-align:center"><div style="color:var(--text-muted);font-weight:700;letter-spacing:0.5px;text-transform:uppercase">R:R</div><div style="color:'+rrCol+';font-size:16px;font-weight:800;font-family:var(--mono);margin-top:2px">'+ev.riskRewardRatio.toFixed(2)+'</div></div>';
+  h+='<div style="text-align:center"><div style="color:var(--text-muted);font-weight:700;letter-spacing:0.5px;text-transform:uppercase">Bias Inst</div><div style="color:'+biasCol+';font-size:11px;font-weight:800;font-family:var(--mono);margin-top:4px">'+ev.institutionalBias+'</div></div>';
+  h+='</div></div>';
+
+  // Factores a favor
+  if(ev.factoresConfirmatorios&&ev.factoresConfirmatorios.length>0){
+    h+='<div style="margin-top:8px"><div style="font-size:9px;color:var(--emerald-bright);font-weight:700;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:4px">✓ Factores a favor ('+ev.factoresConfirmatorios.length+')</div>';
+    ev.factoresConfirmatorios.forEach(f=>{h+='<div style="font-size:9px;color:var(--text-secondary);line-height:1.5;padding:1px 0">✓ '+f+'</div>'});
+    h+='</div>';
+  }
+  // Factores en contra
+  if(ev.factoresContra&&ev.factoresContra.length>0){
+    h+='<div style="margin-top:6px"><div style="font-size:9px;color:var(--red-bright);font-weight:700;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:4px">✗ Factores en contra ('+ev.factoresContra.length+')</div>';
+    ev.factoresContra.forEach(f=>{h+='<div style="font-size:9px;color:var(--text-muted);line-height:1.5;padding:1px 0">✗ '+f+'</div>'});
+    h+='</div>';
+  }
+
+  // Scenario planning
+  if(ev.scenarioBull||ev.scenarioBear){
+    h+='<div style="margin-top:8px;padding:8px;background:rgba(1,4,9,0.4);border:1px solid var(--border);border-radius:6px">';
+    h+='<div style="font-size:9px;color:var(--text-muted);font-weight:700;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:4px">📍 Scenario Planning</div>';
+    if(ev.scenarioBull)h+='<div style="font-size:9px;color:var(--emerald-bright);line-height:1.4;margin-bottom:3px">🎯 '+ev.scenarioBull+'</div>';
+    if(ev.scenarioBear)h+='<div style="font-size:9px;color:var(--red-bright);line-height:1.4">🛑 '+ev.scenarioBear+'</div>';
+    h+='</div>';
+  }
+
+  // Key levels
+  if(ev.keyLevels){
+    h+='<div class="analyst-row" style="margin-top:6px"><span class="label">Soporte clave</span><span class="value green tnum">$'+Math.round(ev.keyLevels.support).toLocaleString()+'</span></div>';
+    h+='<div class="analyst-row"><span class="label">Resistencia clave</span><span class="value red tnum">$'+Math.round(ev.keyLevels.resistance).toLocaleString()+'</span></div>';
+  }
+
+  // Timeframe alignment
+  if(ev.timeframeAlignment){
+    const tfCol=ev.timeframeAlignment==='ALIGNED'?'var(--emerald-bright)':ev.timeframeAlignment==='CONFLICTING'?'var(--red-bright)':'var(--gold-bright)';
+    h+='<div class="analyst-row"><span class="label">TF Alignment</span><span class="value tnum" style="color:'+tfCol+'">'+ev.timeframeAlignment+'</span></div>';
+  }
+}
+
+// Veredicto
+if(ev){const vCls=ev.veredicto==='APROBAR'?'buy':ev.veredicto==='OPERAR_50'?'wait':'wait',vText=ev.veredicto==='APROBAR'?'APROBAR':ev.veredicto==='OPERAR_50'?'OPERAR 50%':'ESPERAR';
+h+='<div class="verdict-box"><div class="verdict-text '+vCls+'">'+vText+'</div><div class="verdict-size">Score: '+ev.scoreOperable+'/100 · Size: '+ev.sizeSugerido+'x · '+ev.sizeRazon+'</div><div class="verdict-just">'+ev.justificacion+'</div></div>'}h+='</div>';
 // === NEWS CARD ===
 if(a.news&&a.news.length>0){h+='<div class="card" style="margin-bottom:8px"><div class="card-header"><span class="card-tag">NEWS · LATEST 5</span><span class="card-ticker">4H CYCLE</span></div>';a.news.slice(0,5).forEach(n=>{const se=n.sentiment==='alcista'?'▲':n.sentiment==='bajista'?'▼':'■';const seCol=n.sentiment==='alcista'?'var(--emerald-bright)':n.sentiment==='bajista'?'var(--red-bright)':'var(--text-muted)';const ic=n.impact==='alta'?'var(--red-bright)':n.impact==='media'?'var(--gold-bright)':'var(--text-secondary)';const bg=n.impact==='alta'?'rgba(248,81,73,0.12)':n.impact==='media'?'rgba(210,153,34,0.12)':'rgba(48,54,61,0.2)';h+='<div class="news-item"><span class="news-tag" style="color:'+ic+';background:'+bg+'">'+n.impact.toUpperCase()+'</span><span style="color:'+seCol+';font-family:var(--mono);font-weight:700;flex-shrink:0">'+se+'</span><span style="flex:1">'+n.title.slice(0,68)+(n.title.length>68?'…':'')+'</span></div>'});h+='</div>'}}
 h+='</div></div>';
