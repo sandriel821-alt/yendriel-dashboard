@@ -330,10 +330,38 @@ canvas{display:block;width:100%}
 /* === POSITION PROGRESS BAR === */
 .pos-progress{margin-top:8px;padding:8px 10px;background:rgba(1,4,9,0.5);border:1px solid var(--border);border-radius:var(--radius-sm)}
 .pos-progress-label{display:flex;justify-content:space-between;font-size:8px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;font-family:var(--mono);margin-bottom:5px}
-.pos-progress-bar{position:relative;height:8px;background:rgba(48,54,61,0.6);border-radius:2px;overflow:hidden}
+.pos-progress-bar{position:relative;height:10px;background:rgba(48,54,61,0.6);border-radius:2px;overflow:visible}
 .pos-progress-fill{position:absolute;top:0;left:0;bottom:0;background:linear-gradient(90deg,var(--red),var(--gold),var(--emerald));border-radius:2px;transition:width 0.4s ease}
 .pos-progress-marker{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--cyan);box-shadow:0 0 8px var(--cyan);transform:translateX(-50%);z-index:2}
 .pos-progress-ends{display:flex;justify-content:space-between;font-size:8px;color:var(--text-muted);font-family:var(--mono);margin-top:4px;font-variant-numeric:tabular-nums}
+/* R-level markers on progress bar */
+.pos-r-mark{position:absolute;top:0;bottom:0;width:1px;background:rgba(120,140,180,0.2);z-index:1}
+.pos-r-label{position:absolute;top:-12px;font-size:7px;color:var(--text-muted);font-family:var(--mono);transform:translateX(-50%);white-space:nowrap}
+/* Risk calculator */
+.risk-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:8px;padding:8px;background:rgba(1,4,9,0.5);border:1px solid var(--border);border-radius:6px}
+.risk-item{text-align:center}
+.risk-item .risk-lbl{font-size:7px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;font-family:var(--mono)}
+.risk-item .risk-val{font-size:13px;font-weight:800;font-family:var(--mono);margin-top:2px;font-variant-numeric:tabular-nums}
+.risk-item .risk-sub{font-size:8px;color:var(--text-muted);margin-top:1px;font-family:var(--mono)}
+/* Liquidation warning */
+.liq-warn{margin-top:6px;padding:6px 10px;background:rgba(248,81,73,0.08);border:1px solid rgba(248,81,73,0.3);border-radius:6px;display:flex;justify-content:space-between;align-items:center;font-size:10px;font-family:var(--mono)}
+.liq-warn .liq-lbl{color:var(--red-bright);font-weight:700;letter-spacing:0.5px;text-transform:uppercase;font-size:8px}
+.liq-warn .liq-val{color:var(--red-bright);font-weight:800;font-variant-numeric:tabular-nums}
+.liq-warn .liq-dist{color:var(--text-muted);font-size:9px}
+/* Trade timer */
+.trade-timer{margin-top:6px;padding:6px 10px;background:rgba(1,4,9,0.5);border:1px solid var(--border);border-radius:6px;display:flex;justify-content:space-between;align-items:center;font-size:10px;font-family:var(--mono)}
+.trade-timer .timer-lbl{color:var(--text-muted);font-weight:700;letter-spacing:0.5px;text-transform:uppercase;font-size:8px}
+.trade-timer .timer-val{color:var(--cyan-bright);font-weight:800;font-variant-numeric:tabular-nums}
+/* Near SL/TP alert */
+.pos-alert{padding:4px 10px;border-radius:4px;font-size:9px;font-weight:700;font-family:var(--mono);text-align:center;margin-top:6px;animation:pulse-alert 1.5s infinite}
+.pos-alert.sl{background:rgba(248,81,73,0.15);border:1px solid rgba(248,81,73,0.4);color:var(--red-bright)}
+.pos-alert.tp{background:rgba(63,185,80,0.15);border:1px solid rgba(63,185,80,0.4);color:var(--emerald-bright)}
+@keyframes pulse-alert{0%,100%{opacity:1}50%{opacity:0.6}}
+/* Funding countdown */
+.funding-box{margin-top:6px;padding:6px 10px;background:rgba(1,4,9,0.5);border:1px solid var(--border);border-radius:6px;display:flex;justify-content:space-between;align-items:center;font-size:10px;font-family:var(--mono)}
+.funding-box .fund-lbl{color:var(--text-muted);font-weight:700;letter-spacing:0.5px;text-transform:uppercase;font-size:8px}
+.funding-box .fund-time{color:var(--gold-bright);font-weight:700;font-variant-numeric:tabular-nums}
+.funding-box .fund-cost{color:var(--text-secondary);font-weight:600;font-variant-numeric:tabular-nums}
 
 /* === ANALYST === */
 .analyst-card{
@@ -1069,15 +1097,86 @@ h+='<div class="card" style="margin-bottom:8px"><div class="card-header"><span c
 // === CHART ===
 h+='<div class="chart-container"><div class="chart-info"><span>BTC/USDT · 4H</span><span style="color:var(--gold-bright)">● EMA30 '+usd(sig.ema30,0)+'</span><span style="color:var(--purple)">● EMA100 '+usd(sig.ema100,0)+'</span><span style="color:var(--blue)">● RSI '+sig.rsi.toFixed(0)+'</span><span style="color:var(--cyan-bright)">● LIVE</span></div><canvas id="chart" style="height:440px"></canvas></div>';
 h+='<div class="rsi-container"><div class="rsi-label">RSI (14) · Overbought 70 · Oversold 30</div><canvas id="rsiChart" style="height:100px"></canvas></div>';
-// === POSITION CARD (with progress bar SL->TP) ===
+// === POSITION CARD (MEJORADO: risk calc + liquidation + timer + alerts) ===
 if(ot){const ol=ot.direction==='LONG',pnl=pt.unrealizedPnl||0,pp=ot.sizeUsd>0?(pnl/ot.sizeUsd)*100:0;
+const lev=ot.leverage||1;
+const posVal=ot.sizeUsd*lev;
+const sizeBtc=ot.sizeBtc||0;
 let progress=50;
 if(ot.stopLoss&&ot.takeProfit1&&ot.takeProfit1!==ot.entryPrice){
   if(ol){const range=ot.takeProfit1-ot.stopLoss;progress=range>0?((pt.currentPrice-ot.stopLoss)/range)*100:50}
   else{const range=ot.stopLoss-ot.takeProfit1;progress=range>0?((ot.stopLoss-pt.currentPrice)/range)*100:50}
   progress=Math.max(0,Math.min(100,progress));
 }
-h+='<div class="card" style="margin-bottom:8px;border-color:'+(ol?'var(--border-emerald)':'var(--border-red)')+'"><div class="card-header"><span class="card-tag">POSITION · '+(ol?'LONG':'SHORT')+(ot.trailingActive?' · TRAILING':'')+(ot.partialClosed?' · TP1 HIT':'')+'</span><span class="card-ticker">'+usd(ot.sizeUsd,2)+' USD</span></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px"><div class="signal-info-item"><div class="signal-info-label">Entry</div><div class="signal-info-value tnum">'+usd(ot.entryPrice,0)+'</div></div><div class="signal-info-item"><div class="signal-info-label">Current</div><div class="signal-info-value tnum" style="color:var(--gold-bright)" id="currentPriceDisplay">'+usd(pt.currentPrice,0)+'</div></div><div class="signal-info-item"><div class="signal-info-label">Stop Loss</div><div class="signal-info-value tnum" style="color:var(--red-bright)">'+usd(ot.stopLoss,0)+'</div></div><div class="signal-info-item"><div class="signal-info-label">Take Profit</div><div class="signal-info-value tnum" style="color:var(--emerald-bright)">'+usd(ot.takeProfit1,0)+'</div></div><div class="signal-info-item"><div class="signal-info-label">Size</div><div class="signal-info-value tnum">'+usd(ot.sizeUsd,2)+' · '+(ot.sizeBtc||0).toFixed(5)+' BTC</div></div><div class="signal-info-item"><div class="signal-info-label">PnL</div><div class="signal-info-value tnum" id="pnlDisplay" style="color:'+(pnl>=0?'var(--emerald-bright)':'var(--red-bright)')+'">'+(pnl>=0?'+':'')+fmt(pnl,4)+' ('+pp.toFixed(2)+'%)</div></div>'+(ot.bestPrice?('<div class="signal-info-item" style="grid-column:span 2"><div class="signal-info-label">Best Price (Trailing)</div><div class="signal-info-value tnum" style="color:var(--blue)">'+usd(ot.bestPrice,0)+'</div></div>'):'')+'</div><div class="pos-progress"><div class="pos-progress-label"><span>SL</span><span>PROGRESS '+progress.toFixed(0)+'%</span><span>TP</span></div><div class="pos-progress-bar"><div class="pos-progress-fill" style="width:'+progress+'%"></div><div class="pos-progress-marker" style="left:'+progress+'%"></div></div><div class="pos-progress-ends"><span>'+usd(ot.stopLoss,0)+'</span><span>'+usd(ot.takeProfit1,0)+'</span></div></div></div>'}
+
+// Risk Calculator
+const riskUsd=Math.abs(sizeBtc*(ot.entryPrice-ot.stopLoss));
+const rewardUsd=Math.abs(sizeBtc*(ot.takeProfit1-ot.entryPrice));
+const riskPctCap=(riskUsd/p.equity)*100;
+const rewardPctCap=(rewardUsd/p.equity)*100;
+
+// Liquidation price (simplified isolated margin)
+// SHORT: liq ≈ entry × (1 + 1/lev); LONG: liq ≈ entry × (1 - 1/lev)
+const liqPrice=ol?ot.entryPrice*(1-1/lev):ot.entryPrice*(1+1/lev);
+const liqDistPct=Math.abs((liqPrice-pt.currentPrice)/pt.currentPrice*100);
+
+// Trade timer
+const openedMs=ot.openedAt?new Date(ot.openedAt).getTime():Date.now();
+const elapsedMs=Date.now()-openedMs;
+const elapsedH=Math.floor(elapsedMs/3600000);
+const elapsedM=Math.floor((elapsedMs%3600000)/60000);
+const maxHoldMs=40*4*60*60*1000;
+const remainingMs=Math.max(0,maxHoldMs-elapsedMs);
+const remH=Math.floor(remainingMs/3600000);
+const remM=Math.floor((remainingMs%3600000)/60000);
+
+// Funding countdown (OKX: cada 8h, 00:00/08:00/16:00 UTC)
+const nowUtc=new Date();
+const fundingHours=[0,8,16];
+let nextFunding=fundingHours.find(h=>h>nowUtc.getUTCHours());
+if(nextFunding===undefined)nextFunding=0;
+const nextFundingDate=new Date(Date.UTC(nowUtc.getUTCFullYear(),nowUtc.getUTCMonth(),nowUtc.getUTCDate(),nextFunding,0,0));
+if(nextFundingDate.getTime()<Date.now())nextFundingDate.setUTCDate(nextFundingDate.getUTCDate()+1);
+const fundMs=nextFundingDate.getTime()-Date.now();
+const fundH=Math.floor(fundMs/3600000);
+const fundM=Math.floor((fundMs%3600000)/60000);
+// Funding cost (SHORT recibe funding si rate > 0, LONG paga)
+const fundRate=pt.institutional?.data?.fundingRate||0;
+const fundCost=posVal*fundRate*(ol?-1:1);
+
+// Near SL/TP alerts
+const distSlPct=Math.abs((pt.currentPrice-ot.stopLoss)/pt.currentPrice*100);
+const distTpPct=Math.abs((pt.currentPrice-ot.takeProfit1)/pt.currentPrice*100);
+const nearSl=distSlPct<1.5;
+const nearTp=distTpPct<1.5;
+
+// Border color with alert
+const alertBorder=nearSl?'rgba(248,81,73,0.5)':nearTp?'rgba(63,185,80,0.5)':(ol?'var(--border-emerald)':'var(--border-red)');
+
+h+='<div class="card" style="margin-bottom:8px;border-color:'+alertBorder+'"><div class="card-header"><span class="card-tag">POSITION · '+(ol?'LONG':'SHORT')+(ot.trailingActive?' · TRAILING':'')+(ot.partialClosed?' · TP1 HIT':'')+' · '+lev+'X</span><span class="card-ticker">'+usd(ot.sizeUsd,2)+' MARGEN · '+usd(posVal,0)+' POS</span></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px"><div class="signal-info-item"><div class="signal-info-label">Entry</div><div class="signal-info-value tnum">'+usd(ot.entryPrice,0)+'</div></div><div class="signal-info-item"><div class="signal-info-label">Current</div><div class="signal-info-value tnum" style="color:var(--gold-bright)" id="currentPriceDisplay">'+usd(pt.currentPrice,0)+'</div></div><div class="signal-info-item"><div class="signal-info-label">Stop Loss</div><div class="signal-info-value tnum" style="color:var(--red-bright)">'+usd(ot.stopLoss,0)+'</div></div><div class="signal-info-item"><div class="signal-info-label">Take Profit</div><div class="signal-info-value tnum" style="color:var(--emerald-bright)">'+usd(ot.takeProfit1,0)+'</div></div><div class="signal-info-item"><div class="signal-info-label">Size</div><div class="signal-info-value tnum">'+usd(ot.sizeUsd,2)+' · '+(ot.sizeBtc||0).toFixed(5)+' BTC</div></div><div class="signal-info-item"><div class="signal-info-label">PnL</div><div class="signal-info-value tnum" id="pnlDisplay" style="color:'+(pnl>=0?'var(--emerald-bright)':'var(--red-bright)')+'">'+(pnl>=0?'+':'')+fmt(pnl,4)+' ('+pp.toFixed(2)+'%)</div></div>'+(ot.bestPrice?('<div class="signal-info-item" style="grid-column:span 2"><div class="signal-info-label">Best Price (Trailing)</div><div class="signal-info-value tnum" style="color:var(--blue)">'+usd(ot.bestPrice,0)+'</div></div>'):'')+'</div>';
+
+// Risk Calculator
+h+='<div class="risk-grid">';
+h+='<div class="risk-item"><div class="risk-lbl">Riesgo SL</div><div class="risk-val" style="color:var(--red-bright)">-$'+riskUsd.toFixed(2)+'</div><div class="risk-sub">'+riskPctCap.toFixed(2)+'% capital</div></div>';
+h+='<div class="risk-item"><div class="risk-lbl">Ganancia TP</div><div class="risk-val" style="color:var(--emerald-bright)">+$'+rewardUsd.toFixed(2)+'</div><div class="risk-sub">'+rewardPctCap.toFixed(2)+'% capital</div></div>';
+h+='<div class="risk-item"><div class="risk-lbl">R:R</div><div class="risk-val" style="color:'+(rewardUsd/riskUsd>=2?'var(--emerald-bright)':rewardUsd/riskUsd>=1?'var(--gold-bright)':'var(--red-bright)')+'">'+(rewardUsd/riskUsd).toFixed(2)+'</div><div class="risk-sub">'+lev+'x leverage</div></div>';
+h+='</div>';
+
+// Liquidation warning
+h+='<div class="liq-warn"><div><span class="liq-lbl">💀 LIQUIDACIÓN</span> <span class="liq-val">$'+Math.round(liqPrice).toLocaleString()+'</span></div><div class="liq-dist">'+liqDistPct.toFixed(2)+'% del precio actual</div></div>';
+
+// Trade timer
+h+='<div class="trade-timer"><div><span class="timer-lbl">⏱ ABIERTO</span> <span class="timer-val">'+elapsedH+'h '+elapsedM+'m</span></div><div><span class="timer-lbl">TIMEOUT EN</span> <span class="timer-val">'+remH+'h '+remM+'m</span></div></div>';
+
+// Funding countdown
+h+='<div class="funding-box"><div><span class="fund-lbl">💰 FUNDING</span> <span class="fund-time">'+fundH+'h '+fundM+'m</span></div><div class="fund-cost">'+(fundCost>=0?'+':'')+'$'+Math.abs(fundCost).toFixed(3)+' '+(fundCost>=0?'(recibes)':'(pagas)')+'</div></div>';
+
+// Near SL/TP alert
+if(nearSl){h+='<div class="pos-alert sl">⚠️ PRECIO A '+distSlPct.toFixed(2)+'% DEL STOP LOSS — RIESGO INMINENTE</div>'}
+else if(nearTp){h+='<div class="pos-alert tp">🎯 PRECIO A '+distTpPct.toFixed(2)+'% DEL TAKE PROFIT — CASI EN OBJETIVO</div>'}
+
+// Progress bar with R-multiples
+h+='<div class="pos-progress"><div class="pos-progress-label"><span>SL</span><span>PROGRESS '+progress.toFixed(0)+'%</span><span>TP</span></div><div class="pos-progress-bar"><div class="pos-progress-fill" style="width:'+progress+'%"></div><div class="pos-r-mark" style="left:25%"></div><div class="pos-r-mark" style="left:50%"></div><div class="pos-r-mark" style="left:75%"></div><div class="pos-progress-marker" style="left:'+progress+'%"></div></div><div class="pos-progress-ends"><span>'+usd(ot.stopLoss,0)+'</span><span>'+usd(ot.takeProfit1,0)+'</span></div></div></div>'}
 else{h+='<div class="card" style="margin-bottom:8px"><div class="card-header"><span class="card-tag">SIGNAL · '+sig.direction+'</span><span class="card-ticker">NO POSITION</span></div><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px"><span style="font-size:13px;font-weight:700;color:'+dc+';font-family:var(--mono);letter-spacing:0.5px">'+(isL?'LONG':isS?'SHORT':'NEUTRAL')+'</span><span style="font-size:10px;color:var(--text-secondary);text-align:right;flex:1;font-family:var(--mono);line-height:1.4">'+sig.reason+'</span></div><div class="waiting-signal">Esperando señal de entrada — la IA monitorea el mercado 24/7</div></div>'}
 h+='</div><div>';
 // === IA v4 CARD (neural status panel with fold weight mini bars) ===
