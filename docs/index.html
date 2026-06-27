@@ -442,7 +442,13 @@ canvas{display:block;width:100%}
 .inst-item:hover{border-color:var(--border-strong)}
 .inst-item .inst-label{font-size:8px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;font-weight:700;font-family:var(--mono)}
 .inst-item .inst-val{font-size:13px;font-weight:700;margin-top:3px;font-variant-numeric:tabular-nums;letter-spacing:-0.2px;font-family:var(--mono);color:var(--text-primary)}
+.inst-item .inst-hint{font-size:9px;color:var(--text-muted);margin-top:4px;line-height:1.3;font-weight:500;letter-spacing:0.1px}
+.inst-item .inst-hint.bull{color:rgba(63,185,80,0.75)}
+.inst-item .inst-hint.bear{color:rgba(248,81,73,0.75)}
+.inst-item .inst-hint.neutral{color:var(--text-muted)}
 .inst-signal{margin-top:8px;padding:8px 10px;background:rgba(1,4,9,0.6);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:10px;font-family:var(--mono)}
+.inst-legend{margin-top:8px;padding:8px 10px;background:rgba(1,4,9,0.4);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:9px;color:var(--text-muted);line-height:1.5;letter-spacing:0.1px}
+.inst-legend strong{color:var(--text-secondary);font-weight:600}
 
 /* === NEWS === */
 .news-item{font-size:10px;padding:6px 0;border-bottom:1px solid rgba(48,54,61,0.4);display:flex;gap:6px;align-items:flex-start;line-height:1.5;font-family:var(--font)}
@@ -1100,19 +1106,54 @@ if(pt.institutional){
   const cvdArrow=inst.cvd.trend==='bullish'?'▲':inst.cvd.trend==='bearish'?'▼':'■';
   const cvdCol=inst.cvd.trend==='bullish'?'var(--emerald-bright)':inst.cvd.trend==='bearish'?'var(--red-bright)':'var(--text-secondary)';
   const divMark=inst.cvd.divergence?' ⚠':'';
+
+  // === EXPLICACIONES DINÁMICAS SEGÚN EL VALOR ===
+  // Funding Rate: positivo = longs pagan a shorts (mercado alcista sesgado), negativo = viceversa
+  const fr=inst.fundingRate;
+  const frHint=fr>0.0003?'<span class="inst-hint bear">Alto: longs saturados, posible reversión bajista</span>'
+            :fr<-0.0002?'<span class="inst-hint bull">Negativo: shorts saturados, posible reversión alcista</span>'
+            :'<span class="inst-hint neutral">Neutral: mercado equilibrado</span>';
+
+  // Open Interest: sube = nueva entrada, baja = salida
+  const oic=inst.openInterestChange24h;
+  const oiHint=oic>5?'<span class="inst-hint bull">Sube fuerte: nuevo dinero entrando, tendencia se refuerza</span>'
+            :oic<-5?'<span class="inst-hint bear">Baja fuerte: salidas, tendencia pierde fuerza</span>'
+            :'<span class="inst-hint neutral">Estable: sin cambios significativos</span>';
+
+  // Liquidations: si longs > shorts, hubo pánico comprador (reversión posible)
+  const liq=inst.liquidations24h;
+  const liqHint=liq.total>0?(liq.longs>liq.shorts*1.5?'<span class="inst-hint bull">Longs liquidados: pánico comprador, posible suelo</span>'
+                         :liq.shorts>liq.longs*1.5?'<span class="inst-hint bear">Shorts liquidados: euforia, posible techo</span>'
+                         :'<span class="inst-hint neutral">Balance: liquidaciones mixtas</span>')
+                       :'<span class="inst-hint neutral">Sin liquidaciones significativas</span>';
+
+  // Long/Short Ratio: >1.5 = mercado muy long (riesgo bajista), <0.8 = muy short (riesgo alcista)
+  const lsr=inst.longShortRatio.ratio;
+  const lsrHint=lsr>1.5?'<span class="inst-hint bear">Mercado muy long: riesgo de corrección si baja</span>'
+             :lsr<0.8?'<span class="inst-hint bull">Mercado muy short: posible squeeze alcista</span>'
+             :'<span class="inst-hint neutral">Balance: posiciones equilibradas</span>';
+
+  // CVD: bullish = más compras, bearish = más ventas
+  const cvdT=inst.cvd.trend;
+  const cvdHint=cvdT==='bullish'?'<span class="inst-hint bull">Compradores agresivos: presión alcista</span>'
+             :cvdT==='bearish'?'<span class="inst-hint bear">Vendedores agresivos: presión bajista</span>'
+             :'<span class="inst-hint neutral">Sin dirección clara</span>';
+
   h+='<div class="inst-card"><div class="card-header"><span class="card-tag">INSTITUTIONAL DATA</span><span class="card-ticker" style="color:'+biasCls+'">'+biasArrow+' '+sigI.bias.toUpperCase()+'</span></div>';
   h+='<div class="inst-grid">';
-  h+='<div class="inst-item"><div class="inst-label">Funding Rate</div><div class="inst-val">'+(inst.fundingRate*100).toFixed(4)+'%<span style="color:var(--text-muted);font-size:9px;font-weight:500;font-family:var(--mono)"> · '+inst.fundingRateAnnual.toFixed(1)+'% ANN</span></div></div>';
-  h+='<div class="inst-item"><div class="inst-label">Open Interest</div><div class="inst-val">$'+(inst.openInterest/1e9).toFixed(2)+'B<span style="color:'+(inst.openInterestChange24h>=0?'var(--emerald-bright)':'var(--red-bright)')+';font-size:9px;font-weight:600;font-family:var(--mono)"> · '+(inst.openInterestChange24h>=0?'+':'')+inst.openInterestChange24h.toFixed(1)+'%</span></div></div>';
-  if(inst.liquidations24h.total>0){
-    h+='<div class="inst-item"><div class="inst-label">Liquidations 24H</div><div class="inst-val">$'+(inst.liquidations24h.total/1e6).toFixed(1)+'M<div style="font-size:9px;margin-top:2px;font-family:var(--mono)"><span style="color:var(--red-bright)">L $'+(inst.liquidations24h.longs/1e6).toFixed(1)+'M</span> · <span style="color:var(--emerald-bright)">S $'+(inst.liquidations24h.shorts/1e6).toFixed(1)+'M</span></div></div></div>';
+  h+='<div class="inst-item"><div class="inst-label">Funding Rate</div><div class="inst-val">'+(fr*100).toFixed(4)+'%<span style="color:var(--text-muted);font-size:9px;font-weight:500;font-family:var(--mono)"> · '+inst.fundingRateAnnual.toFixed(1)+'% ANN</span></div>'+frHint+'</div>';
+  h+='<div class="inst-item"><div class="inst-label">Open Interest</div><div class="inst-val">$'+(inst.openInterest/1e9).toFixed(2)+'B<span style="color:'+(oic>=0?'var(--emerald-bright)':'var(--red-bright)')+';font-size:9px;font-weight:600;font-family:var(--mono)"> · '+(oic>=0?'+':'')+oic.toFixed(1)+'%</span></div>'+oiHint+'</div>';
+  if(liq.total>0){
+    h+='<div class="inst-item"><div class="inst-label">Liquidations 24H</div><div class="inst-val">$'+(liq.total/1e6).toFixed(1)+'M<div style="font-size:9px;margin-top:2px;font-family:var(--mono)"><span style="color:var(--red-bright)">L $'+(liq.longs/1e6).toFixed(1)+'M</span> · <span style="color:var(--emerald-bright)">S $'+(liq.shorts/1e6).toFixed(1)+'M</span></div></div>'+liqHint+'</div>';
   }
-  h+='<div class="inst-item"><div class="inst-label">Long/Short Ratio</div><div class="inst-val">'+inst.longShortRatio.ratio.toFixed(2)+'<div style="font-size:9px;margin-top:2px;color:var(--text-muted);font-family:var(--mono)">'+inst.longShortRatio.longAccount.toFixed(0)+'%L / '+inst.longShortRatio.shortAccount.toFixed(0)+'%S</div></div></div>';
-  h+='<div class="inst-item" style="grid-column:span 2"><div class="inst-label">CVD (Cumulative Volume Delta)</div><div class="inst-val" style="text-transform:uppercase;letter-spacing:0.5px;font-size:12px;color:'+cvdCol+'">'+cvdArrow+' '+inst.cvd.trend+divMark+(inst.cvd.divergence?' <span style="color:var(--gold-bright);font-size:10px;font-weight:600">(DIVERGENCE)</span>':'')+'</div></div>';
+  h+='<div class="inst-item"><div class="inst-label">Long/Short Ratio</div><div class="inst-val">'+lsr.toFixed(2)+'<div style="font-size:9px;margin-top:2px;color:var(--text-muted);font-family:var(--mono)">'+inst.longShortRatio.longAccount.toFixed(0)+'%L / '+inst.longShortRatio.shortAccount.toFixed(0)+'%S</div></div>'+lsrHint+'</div>';
+  h+='<div class="inst-item" style="grid-column:span 2"><div class="inst-label">CVD (Cumulative Volume Delta)</div><div class="inst-val" style="text-transform:uppercase;letter-spacing:0.5px;font-size:12px;color:'+cvdCol+'">'+cvdArrow+' '+inst.cvd.trend+divMark+(inst.cvd.divergence?' <span style="color:var(--gold-bright);font-size:10px;font-weight:600">(DIVERGENCE)</span>':'')+'</div>'+cvdHint+'</div>';
   h+='</div>';
   if(sigI.reasons.length>0){
     h+='<div class="inst-signal"><div style="color:'+biasCls+';margin-bottom:4px;font-weight:700;font-size:10px;letter-spacing:0.5px;text-transform:uppercase">Señal: '+sigI.bias.toUpperCase()+'</div>'+sigI.reasons.map(r=>'<div style="color:var(--text-secondary);margin:2px 0;font-size:10px;line-height:1.4">• '+r+'</div>').join('')+'</div>';
   }
+  // Leyenda explicativa general
+  h+='<div class="inst-legend"><strong>Cómo leer:</strong> L=Longs (compradores) · S=Shorts (vendedores) · CVD=dirección del flujo de órdenes · Funding=costo de mantener posición perpetua. <strong>Verde</strong>=favorable alcista · <strong>Rojo</strong>=favorable bajista.</div>';
   h+='</div>';
 }
 // === FOOTER (with system status indicators) ===
