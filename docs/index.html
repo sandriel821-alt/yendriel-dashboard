@@ -1011,9 +1011,9 @@ const BACKEND_URL='https://yendriel.onrender.com';
 let backendOK=false;
 try{
 const[rb1,rb2,rb3]=await Promise.all([
-fetch(BACKEND_URL+'/api/paper-trading',{cache:'no-store',signal:AbortSignal.timeout(8000)}),
-fetch(BACKEND_URL+'/api/dashboard',{cache:'no-store',signal:AbortSignal.timeout(8000)}),
-fetch(BACKEND_URL+'/api/analyst',{cache:'no-store',signal:AbortSignal.timeout(8000)})
+fetch(BACKEND_URL+'/api/paper-trading',{cache:'no-store',signal:AbortSignal.timeout(20000)}),
+fetch(BACKEND_URL+'/api/dashboard',{cache:'no-store',signal:AbortSignal.timeout(20000)}),
+fetch(BACKEND_URL+'/api/analyst',{cache:'no-store',signal:AbortSignal.timeout(20000)})
 ]);
 if(rb1.ok&&rb2.ok&&rb3.ok){
 pt=await rb1.json();dash=await rb2.json();an=await rb3.json();
