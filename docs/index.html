@@ -454,6 +454,15 @@ canvas{display:block;width:100%}
 .prom-layer-detail{font-size:8px;color:var(--text-muted);font-family:var(--mono)}
 .prom-commands{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
 .prom-cmd{font-size:8px;font-family:var(--mono);color:var(--cyan);background:var(--bg-elev);padding:3px 8px;border-radius:4px;border:1px solid var(--border)}
+/* Multi-Asset Radar Table */
+.radar-table{width:100%;border-collapse:collapse;margin-top:8px;font-family:var(--mono);font-size:9px}
+.radar-table th{text-align:left;padding:6px 8px;color:var(--text-secondary);font-weight:600;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:0.5px;font-size:8px}
+.radar-table td{padding:6px 8px;border-bottom:1px solid var(--border);color:var(--text-primary)}
+.radar-table tr:hover{background:var(--bg-elev)}
+.radar-score{font-weight:700;font-size:10px}
+.radar-score.aplus{color:var(--emerald-bright);text-shadow:0 0 6px var(--emerald)}
+.radar-score.asetup{color:var(--gold)}
+.radar-score.low{color:var(--text-muted)}
 .btn-refresh{
   position:fixed;bottom:16px;right:16px;width:44px;height:44px;border-radius:50%;
   background:linear-gradient(135deg,var(--bg-card-solid),var(--bg-elev));
@@ -1367,6 +1376,26 @@ if(pt.institutional){
   h+='</div>';
 }
 // === FOOTER (with system status indicators) ===
+// Multi-Asset Radar Table — muestra scores de 8 activos
+if(pt.radar&&pt.radar.results){
+  h+='<div class="prom-status"><div class="prom-status-title"><span class="status-dot ok"></span>📡 RADAR MULTI-ACTIVO · 8 ACTIVOS · 4H+1H</div>';
+  h+='<table class="radar-table"><tr><th>ACTIVO</th><th>DIR</th><th>TF</th><th>SCORE</th><th>PRECIO</th><th>FACTORES</th></tr>';
+  // Mostrar top 8 del radar
+  const radarData = pt.radar.summary ? pt.radar.results || [] : [];
+  // Si no hay results del radar, mostrar posiciones abiertas
+  if(radarData.length===0 && pt.openTrades && pt.openTrades.length>0){
+    for(const t of pt.openTrades){
+      const dirEmoji = t.direction==='LONG'?'🟢':'🔴';
+      h+='<tr><td>'+(t.symbol||'BTCUSDT')+'</td><td>'+dirEmoji+' '+(t.direction||'')+'</td><td>'+(t.timeframe||'4h').toUpperCase()+'</td><td><span class="radar-score asetup">'+(t.setupScore||0)+'</span></td><td>$'+(t.entryPrice||0).toFixed(0)+'</td><td>OPEN</td></tr>';
+    }
+  }
+  for(const r of radarData.slice(0,8)){
+    const dirEmoji = r.direction==='LONG'?'🟢':'🔴';
+    const scoreCls = r.setupScore>=80?'aplus':r.setupScore>=70?'asetup':'low';
+    h+='<tr><td>'+(r.name||r.symbol||'?')+'</td><td>'+dirEmoji+' '+(r.direction||'—')+'</td><td>'+(r.timeframe||'4h').toUpperCase()+'</td><td><span class="radar-score '+scoreCls+'">'+(r.setupScore||0)+'/100</span></td><td>$'+(r.entryPrice||0).toFixed(0)+'</td><td>'+(r.opened?'✅ ABIERTO':(r.setupScore>=80?'🔥 A+':'⏸️'))+'</td></tr>';
+  }
+  h+='</table></div>';
+}
 // PROMETHEUS Status Panel — muestra las 7 capas + comandos
 h+='<div class="prom-status"><div class="prom-status-title"><span class="status-dot ok"></span>PROMETHEUS v6.5 · 7-LAYER INTELLIGENT TRADING</div><div class="prom-layers">'+
 '<div class="prom-layer"><div class="prom-layer-name">1. LSTM Ensemble</div><div class="prom-layer-status"><span class="prom-layer-dot '+(pt.iaActive?'ok':'err')+'"></span>'+(pt.iaActive?'ACTIVE':'FALLBACK')+'</div><div class="prom-layer-detail">3 folds · volatilidad</div></div>'+
