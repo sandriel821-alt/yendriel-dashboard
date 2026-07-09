@@ -440,6 +440,20 @@ canvas{display:block;width:100%}
 .footer span{color:var(--text-secondary);font-weight:600}
 .footer-status{display:flex;justify-content:center;gap:16px;flex-wrap:wrap;margin-bottom:8px;font-size:8px;letter-spacing:0.8px;font-family:var(--mono);text-transform:uppercase}
 .footer-status span{display:inline-flex;align-items:center;gap:4px;color:var(--text-secondary)}
+/* PROMETHEUS Status Panel */
+.prom-status{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:14px;margin-top:12px}
+.prom-status-title{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-secondary);margin-bottom:10px;font-family:var(--mono);display:flex;align-items:center;gap:8px}
+.prom-layers{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
+.prom-layer{background:var(--bg-elev);border:1px solid var(--border);border-radius:6px;padding:8px 10px;display:flex;flex-direction:column;gap:2px}
+.prom-layer-name{font-size:9px;font-weight:600;color:var(--text-primary);font-family:var(--mono);letter-spacing:0.5px}
+.prom-layer-status{font-size:8px;color:var(--text-secondary);font-family:var(--mono);display:flex;align-items:center;gap:4px}
+.prom-layer-dot{width:6px;height:6px;border-radius:50%;display:inline-block}
+.prom-layer-dot.ok{background:var(--emerald);box-shadow:0 0 6px var(--emerald)}
+.prom-layer-dot.warn{background:var(--gold);box-shadow:0 0 6px var(--gold)}
+.prom-layer-dot.err{background:var(--red);box-shadow:0 0 6px var(--red)}
+.prom-layer-detail{font-size:8px;color:var(--text-muted);font-family:var(--mono)}
+.prom-commands{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+.prom-cmd{font-size:8px;font-family:var(--mono);color:var(--cyan);background:var(--bg-elev);padding:3px 8px;border-radius:4px;border:1px solid var(--border)}
 .btn-refresh{
   position:fixed;bottom:16px;right:16px;width:44px;height:44px;border-radius:50%;
   background:linear-gradient(135deg,var(--bg-card-solid),var(--bg-elev));
@@ -1353,7 +1367,21 @@ if(pt.institutional){
   h+='</div>';
 }
 // === FOOTER (with system status indicators) ===
-h+='<div class="footer"><div class="footer-status"><span><span class="status-dot ok"></span>DB CONNECTED</span><span><span class="status-dot ok"></span>IA LOADED</span><span><span class="status-dot ok"></span>WEBSOCKET LIVE</span><span><span class="status-dot ok"></span>CRON 2MIN</span></div>PROMETHEUS · LSTM v4 + Chronos-Bolt + Bayesian + Kelly · <span>5-IA ENSEMBLE</span><br>Hora Perú: '+nowLima()+' · Bot: <a href="https://t.me/yendriel_bot" target="_blank" rel="noopener" style="color:#58a6ff;text-decoration:underline;">@yendriel_bot</a> → /status /paper /analisis /backtest /risk /learning</div>';
+// PROMETHEUS Status Panel — muestra las 7 capas + comandos
+h+='<div class="prom-status"><div class="prom-status-title"><span class="status-dot ok"></span>PROMETHEUS v6.5 · 7-LAYER INTELLIGENT TRADING</div><div class="prom-layers">'+
+'<div class="prom-layer"><div class="prom-layer-name">1. LSTM Ensemble</div><div class="prom-layer-status"><span class="prom-layer-dot '+(pt.iaActive?'ok':'err')+'"></span>'+(pt.iaActive?'ACTIVE':'FALLBACK')+'</div><div class="prom-layer-detail">3 folds · volatilidad</div></div>'+
+'<div class="prom-layer"><div class="prom-layer-name">2. Order Flow</div><div class="prom-layer-status"><span class="prom-layer-dot '+(sigI&&sigI.bias?'ok':'warn')+'"></span>'+(sigI&&sigI.bias?sigI.bias.toUpperCase():'N/A')+'</div><div class="prom-layer-detail">CoinGlass framework</div></div>'+
+'<div class="prom-layer"><div class="prom-layer-name">3. Chronos-Bolt</div><div class="prom-layer-status"><span class="prom-layer-dot ok"></span>ONNX LOADED</div><div class="prom-layer-detail">7.3M params · int8</div></div>'+
+'<div class="prom-layer"><div class="prom-layer-name">4. Market Strength</div><div class="prom-layer-status"><span class="prom-layer-dot ok"></span>5 SIGNALS</div><div class="prom-layer-detail">exhaustion detector</div></div>'+
+'<div class="prom-layer"><div class="prom-layer-name">5. Candle Vision</div><div class="prom-layer-status"><span class="prom-layer-dot ok"></span>6 PATTERNS</div><div class="prom-layer-detail">hammer · engulfing · doji</div></div>'+
+'<div class="prom-layer"><div class="prom-layer-name">6. Bayesian Learning</div><div class="prom-layer-status"><span class="prom-layer-dot ok"></span>BETA-BINOMIAL</div><div class="prom-layer-detail">14 factores · auto-calibrado</div></div>'+
+'<div class="prom-layer"><div class="prom-layer-name">7. Risk Mgmt (Kelly)</div><div class="prom-layer-status"><span class="prom-layer-dot ok"></span>QUARTER KELLY</div><div class="prom-layer-detail">vol target + DD throttle</div></div>'+
+'<div class="prom-layer"><div class="prom-layer-name">📡 Radar</div><div class="prom-layer-status"><span class="prom-layer-dot ok"></span>8 ACTIVOS</div><div class="prom-layer-detail">4H + 1H · max 3 pos</div></div>'+
+'<div class="prom-layer"><div class="prom-layer-name">📓 Journal</div><div class="prom-layer-status"><span class="prom-layer-dot ok"></span>CONTEXT CAPTURE</div><div class="prom-layer-detail">+ LLM post-mortem</div></div>'+
+'</div><div class="prom-commands">'+
+'<span class="prom-cmd">/status</span><span class="prom-cmd">/paper</span><span class="prom-cmd">/analisis</span><span class="prom-cmd">/backtest</span><span class="prom-cmd">/risk</span><span class="prom-cmd">/learning</span><span class="prom-cmd">/journal</span><span class="prom-cmd">/lessons</span>'+
+'</div></div>';
+h+='<div class="footer"><div class="footer-status"><span><span class="status-dot ok"></span>DB CONNECTED</span><span><span class="status-dot ok"></span>IA LOADED</span><span><span class="status-dot ok"></span>WEBSOCKET LIVE</span><span><span class="status-dot ok"></span>CRON 2MIN</span></div>PROMETHEUS v6.5 · LSTM + Chronos + Order Flow + Bayesian + Kelly · <span>7-LAYER ENSEMBLE</span><br>Hora Perú: '+nowLima()+' · Bot: <a href="https://t.me/yendriel_bot" target="_blank" rel="noopener" style="color:#58a6ff;text-decoration:underline;">@yendriel_bot</a> → /status /paper /analisis /backtest /risk /learning /journal /lessons</div>';
 app.innerHTML=h;
 if(window.updateIAAlive)updateIAAlive(pt,sig,ev,pt.ensembleState);
 if(!wsPrice) initWebSocket();
