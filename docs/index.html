@@ -446,35 +446,41 @@ body::before{
   color:var(--text-secondary);font-family:var(--font);letter-spacing:0;
 }
 
-/* === POSITIONS === */
-.positions-list{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
-.pos-card{
-  background:linear-gradient(180deg,rgba(18,18,26,0.92) 0%,rgba(13,13,20,0.92) 100%);
+/* === POSITIONS (compact list) === */
+.positions-list{display:flex;flex-direction:column;gap:4px;margin-bottom:14px}
+.pos-row{
+  display:flex;align-items:center;gap:8px;
+  background:rgba(18,18,26,0.72);
   border:1px solid var(--border);
   border-radius:var(--radius-sm);
-  padding:11px 12px;
+  padding:8px 10px;
   position:relative;overflow:hidden;
-  transition:border-color 0.2s,box-shadow 0.2s;
+  transition:border-color 0.15s;
+  cursor:pointer;
 }
-.pos-card.long{border-left:3px solid var(--emerald)}
-.pos-card.short{border-left:3px solid var(--red)}
-.pos-card:hover{border-color:var(--border-strong);box-shadow:var(--shadow-glow)}
-.pos-head{
-  display:flex;align-items:center;justify-content:space-between;gap:8px;
-  margin-bottom:8px;
-}
-.pos-sym{
-  font-family:var(--mono);font-weight:800;font-size:13px;letter-spacing:0.5px;
-  display:flex;align-items:center;gap:7px;
-}
-.pos-dir{
-  font-family:var(--mono);font-size:8px;font-weight:800;letter-spacing:0.8px;
-  padding:2px 5px;border-radius:2px;
-}
-.pos-dir.LONG{background:rgba(0,255,136,0.12);color:var(--emerald-bright);border:1px solid var(--border-emerald)}
-.pos-dir.SHORT{background:rgba(255,51,102,0.12);color:var(--red-bright);border:1px solid var(--border-red)}
-.pos-tags{display:flex;gap:4px;flex-wrap:wrap}
-.pos-tag{
+.pos-row.long{border-left:3px solid var(--emerald)}
+.pos-row.short{border-left:3px solid var(--red)}
+.pos-row:hover{border-color:var(--border-strong)}
+.pos-row-sym{font-family:var(--mono);font-weight:800;font-size:12px;min-width:42px}
+.pos-row-dir{font-family:var(--mono);font-size:8px;font-weight:800;letter-spacing:0.6px;padding:2px 5px;border-radius:2px}
+.pos-row-dir.LONG{background:rgba(0,255,136,0.12);color:var(--emerald-bright)}
+.pos-row-dir.SHORT{background:rgba(255,51,102,0.12);color:var(--red-bright)}
+.pos-row-entry{font-family:var(--mono);font-size:11px;color:var(--text-secondary);min-width:70px}
+.pos-row-cur{font-family:var(--mono);font-size:11px;color:var(--cyan-bright);min-width:70px}
+.pos-row-pnl{font-family:var(--mono);font-size:12px;font-weight:700;min-width:60px;text-align:right}
+.pos-row-pnl.up{color:var(--emerald-bright)}
+.pos-row-pnl.down{color:var(--red-bright)}
+.pos-row-bar{flex:1;height:4px;background:rgba(255,255,255,0.06);border-radius:2px;position:relative;min-width:60px;max-width:120px}
+.pos-row-bar-fill{position:absolute;top:0;left:0;height:100%;border-radius:2px;transition:width 0.3s}
+.pos-row-bar-fill.long{background:linear-gradient(90deg,var(--red),var(--gold),var(--emerald))}
+.pos-row-bar-fill.short{background:linear-gradient(90deg,var(--emerald),var(--gold),var(--red))}
+.pos-row-bar-marker{position:absolute;top:-2px;width:2px;height:8px;background:var(--cyan-bright);box-shadow:0 0 4px var(--cyan);transition:left 0.3s}
+.pos-row-tags{display:flex;gap:3px}
+.pos-row-tag{font-family:var(--mono);font-size:7px;font-weight:700;padding:1px 4px;border-radius:2px;letter-spacing:0.5px}
+.pos-row-tag.trail{background:rgba(0,212,255,0.12);color:var(--cyan-bright)}
+.pos-row-tag.partial{background:rgba(0,255,136,0.12);color:var(--emerald-bright)}
+.pos-row-tag.lev{background:rgba(255,140,0,0.12);color:var(--gold-bright)}
+.pos-empty{text-align:center;padding:20px;color:var(--text-muted);font-size:11px;font-family:var(--mono)}
   font-family:var(--mono);font-size:7px;font-weight:800;letter-spacing:0.5px;
   padding:2px 4px;border-radius:2px;
   background:rgba(0,212,255,0.10);color:var(--cyan-bright);
@@ -763,7 +769,7 @@ const TZ = 'America/Lima';
 const BACKEND_URL = 'https://yendriel.onrender.com';
 const BINANCE_API = 'https://api.binance.com';
 const ASSETS = ['BTC','ETH','SOL','BNB','XRP','AVAX','LINK','DOT'];
-const REFRESH_MS = 15000;
+const REFRESH_MS = 30000;
 
 // State
 let pt, dash, an, ts, B;
@@ -1532,50 +1538,34 @@ function renderPositions(){
     const entry = t.entryPrice || 0;
     const sl = t.stopLoss || 0;
     const tp = t.takeProfit1 || 0;
-    const sizeUsd = t.sizeUsd || 0;
     const lev = t.leverage || 1;
     const sym = (t.symbol||'BTCUSDT').replace('USDT','').toUpperCase();
     const ticker = assetTickers[sym];
     const curPrice = ticker ? ticker.price : (pt && pt.currentPrice ? pt.currentPrice : entry);
-    // PnL
-    const sizeBtc = t.sizeBtc || (entry ? sizeUsd/entry : 0);
+    const sizeBtc = t.sizeBtc || (entry ? (t.sizeUsd||0)/entry : 0);
     const diff = isLong ? (curPrice - entry) : (entry - curPrice);
     const pnl = sizeBtc * diff;
-    const pnlPct = sizeUsd > 0 ? (pnl/sizeUsd)*100 : 0;
-    // Progress: position of current price between SL (0) and TP (1)
     let progress = 0.5;
     if(sl && tp && sl !== tp){
       progress = (curPrice - sl) / (tp - sl);
       progress = Math.max(0, Math.min(1, progress));
     }
-    const enPos = (sl && tp && sl !== tp) ? Math.max(0, Math.min(1, (entry - sl)/(tp - sl))) : 0.33;
     const markerLeft = (progress * 100).toFixed(1) + '%';
-    const tagsHtml = (t.trailingActive ? '<span class="pos-tag trail">TRAIL</span>' : '') +
-                     (t.partialClosed ? '<span class="pos-tag partial">TP1 HIT</span>' : '') +
-                     '<span class="pos-tag">'+lev+'X</span>';
-    html += '<div class="pos-card '+(isLong?'long':'short')+'">'+
-      '<div class="pos-head">'+
-        '<div class="pos-sym">'+sym+'<span class="pos-dir '+t.direction+'">'+t.direction+'</span></div>'+
-        '<div class="pos-tags">'+tagsHtml+'</div>'+
+    const tagsHtml = (t.trailingActive ? '<span class="pos-row-tag trail">TRAIL</span>' : '') +
+                     (t.partialClosed ? '<span class="pos-row-tag partial">TP1</span>' : '') +
+                     '<span class="pos-row-tag lev">'+lev+'X</span>';
+    const dp = sym==='BTC'?0:2;
+    html += '<div class="pos-row '+(isLong?'long':'short')+'" onclick="selectAsset(\''+(t.symbol||'BTCUSDT')+'\')">'+
+      '<div class="pos-row-sym">'+sym+'</div>'+
+      '<span class="pos-row-dir '+t.direction+'">'+t.direction+'</span>'+
+      '<div class="pos-row-entry tnum">'+usd(entry,dp)+'</div>'+
+      '<div class="pos-row-cur tnum">'+usd(curPrice,dp)+'</div>'+
+      '<div class="pos-row-bar">'+
+        '<div class="pos-row-bar-fill '+(isLong?'long':'short')+'" style="width:'+(progress*100).toFixed(0)+'%"></div>'+
+        '<div class="pos-row-bar-marker" style="left:'+markerLeft+'"></div>'+
       '</div>'+
-      '<div class="pos-grid">'+
-        '<div class="pos-cell"><div class="pos-lbl">Entry</div><div class="pos-val tnum">'+usd(entry, sym==='BTC'?0:2)+'</div></div>'+
-        '<div class="pos-cell"><div class="pos-lbl">Current</div><div class="pos-val tnum" style="color:var(--gold-bright)">'+usd(curPrice, sym==='BTC'?0:2)+'</div></div>'+
-        '<div class="pos-cell"><div class="pos-lbl">SL</div><div class="pos-val tnum" style="color:var(--red-bright)">'+usd(sl, sym==='BTC'?0:2)+'</div></div>'+
-        '<div class="pos-cell"><div class="pos-lbl">TP</div><div class="pos-val tnum" style="color:var(--emerald-bright)">'+usd(tp, sym==='BTC'?0:2)+'</div></div>'+
-        '<div class="pos-cell"><div class="pos-lbl">Size</div><div class="pos-val tnum">'+usd(sizeUsd, 2)+'</div></div>'+
-        '<div class="pos-cell"><div class="pos-lbl">PnL</div><div class="pos-val pnl tnum '+(pnl>=0?'up':'down')+'">'+(pnl>=0?'+':'')+fmt(pnl, 3)+'<br><span style="font-size:9px;font-weight:600;opacity:0.8">'+(pnlPct>=0?'+':'')+pnlPct.toFixed(2)+'%</span></div></div>'+
-        '<div class="pos-cell"><div class="pos-lbl">Best</div><div class="pos-val tnum" style="color:var(--cyan-bright)">'+(t.bestPrice?usd(t.bestPrice, sym==='BTC'?0:2):'—')+'</div></div>'+
-        '<div class="pos-cell"><div class="pos-lbl">Hold</div><div class="pos-val tnum">'+holdTime(t.openedAt)+'</div></div>'+
-      '</div>'+
-      '<div class="pos-progress">'+
-        '<div class="pos-progress-track" style="width:100%"></div>'+
-        '<span class="pos-progress-label sl">SL</span>'+
-        '<span class="pos-progress-label en" style="left:'+(enPos*100).toFixed(1)+'%">E</span>'+
-        '<span class="pos-progress-label tp">TP</span>'+
-        '<div class="pos-progress-marker" style="left:'+markerLeft+'"></div>'+
-      '</div>'+
-      '<div class="pos-progress-time"><span>SL '+usd(sl, sym==='BTC'?0:2)+'</span><span style="color:var(--cyan-bright)">● '+usd(curPrice, sym==='BTC'?0:2)+'</span><span>'+usd(tp, sym==='BTC'?0:2)+' TP</span></div>'+
+      '<div class="pos-row-pnl tnum '+(pnl>=0?'up':'down')+'">'+(pnl>=0?'+':'')+fmt(pnl,3)+'</div>'+
+      '<div class="pos-row-tags">'+tagsHtml+'</div>'+
     '</div>';
   });
   list.innerHTML = html;
@@ -1897,38 +1887,41 @@ function renderAll(){
   setTimeout(()=>{ redrawSelectedChart(); drawEquitySparkline(document.getElementById('equitySpark'), [cP.initialCapital, cP.equity]); }, 50);
 }
 
-// === SILENT UPDATE (auto-refresh) ===
+// === SILENT UPDATE (optimized — only update what changed) ===
 function updateValuesInPlace(){
   if(!pt || !pt.success || !cP) return;
-  cP = pt.portfolio;
-  cS = pt.signal;
-  cO = pt.openTrade;
-  // Update header equity
+  const newP = pt.portfolio;
+  const newS = pt.signal;
+  const newO = pt.openTrade;
+  const newTrades = pt.closedTrades || [];
+  const tradesChanged = newTrades.length !== ((pt._lastClosedCount)||0);
+  pt._lastClosedCount = newTrades.length;
+  const openChanged = JSON.stringify(newO) !== JSON.stringify(cO);
+  cP = newP; cS = newS; cO = newO;
+  // 1. Header equity (always update — cheap)
   const eqEl = document.getElementById('hdrEquity');
-  if(eqEl){
-    eqEl.textContent = usd(cP.equity, 2);
-  }
+  if(eqEl) eqEl.textContent = usd(cP.equity, 2);
   const tr = ((cP.equity - cP.initialCapital)/cP.initialCapital)*100;
   const eqChg = document.getElementById('hdrEquityChg');
-  if(eqChg){
-    eqChg.textContent = (tr>=0?'+':'')+tr.toFixed(2)+'%';
-    eqChg.className = 'hdr-equity-chg '+(tr>=0?'up':'down')+' tnum';
-  }
-  // Re-render radar (prices may have changed)
-  renderRadarStrip();
-  // Re-render positions (PnL changes)
+  if(eqChg){ eqChg.textContent = (tr>=0?'+':'')+tr.toFixed(2)+'%'; eqChg.className = 'hdr-equity-chg '+(tr>=0?'up':'down')+' tnum'; }
+  // 2. Positions (always update — PnL changes)
   renderPositions();
-  // Re-render performance (equity curve, stats)
-  renderPerformance();
-  // Re-render history (new closed trades may appear)
-  renderHistory();
-  // Re-render system footer (layer statuses may change)
-  renderSystemFooter();
-  // Re-render why panel (signal may have changed)
-  renderWhyPanel();
-  // Update chart info (EMAs)
-  renderAssetPanel();
-  // Redraw chart
+  // 3. Only re-render heavy stuff if something changed
+  if(tradesChanged){
+    renderPerformance();
+    renderHistory();
+  }
+  // 4. Only re-render radar if 30s passed (not every 15s)
+  if(!pt._lastRadarUpdate || Date.now() - pt._lastRadarUpdate > 30000){
+    renderRadarStrip();
+    pt._lastRadarUpdate = Date.now();
+  }
+  // 5. Only re-render why panel if signal changed
+  if(JSON.stringify(newS) !== JSON.stringify(cS)){
+    renderWhyPanel();
+    renderAssetPanel();
+  }
+  // 6. Chart redraw (only if price moved significantly)
   setTimeout(redrawSelectedChart, 50);
 }
 
@@ -1942,15 +1935,20 @@ async function loadData(isAutoRefresh){
   try{
     let backendOK = false;
     try{
-      const [rb1, rb2, rb3] = await Promise.all([
+      const [rb1, rb2] = await Promise.all([
         fetch(BACKEND_URL+'/api/paper-trading', {cache:'no-store', signal:AbortSignal.timeout(20000)}),
-        fetch(BACKEND_URL+'/api/dashboard', {cache:'no-store', signal:AbortSignal.timeout(20000)}),
-        fetch(BACKEND_URL+'/api/analyst', {cache:'no-store', signal:AbortSignal.timeout(20000)})
+        fetch(BACKEND_URL+'/api/dashboard', {cache:'no-store', signal:AbortSignal.timeout(20000)})
       ]);
-      if(rb1.ok && rb2.ok && rb3.ok){
+      if(rb1.ok && rb2.ok){
         pt = await rb1.json();
         dash = await rb2.json();
-        an = await rb3.json();
+        // Analyst: solo cargar en primer render, no en auto-refresh (causa lag)
+        if(!isAutoRefresh && !an){
+          try{
+            const rb3 = await fetch(BACKEND_URL+'/api/analyst', {cache:'no-store', signal:AbortSignal.timeout(15000)});
+            if(rb3.ok) an = await rb3.json();
+          }catch(e){ console.warn('Analyst fetch skipped:', e.message); }
+        }
         ts = {updated: new Date().toISOString()};
         backendOK = true;
       }
